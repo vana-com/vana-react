@@ -1,0 +1,27 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts"],
+  "out": "docs",
+  "name": "@opendatalabs/vana-react",
+  "exclude": ["**/*.test.*", "**/tests/**", "**/test/**", "**/*.spec.*"],
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "excludeNotDocumented": false,
+  "includeVersion": true,
+  "skipErrorChecking": true,
+  "hideGenerator": true,
+  "navigationLinks": {
+    "GitHub": "https://github.com/opendatalabs/vana-react",
+    "NPM": "https://www.npmjs.com/package/@opendatalabs/vana-react"
+  },
+  "categorizeByGroup": false,
+  "searchInComments": true,
+  "plugin": [],
+  "theme": "default",
+  "treatWarningsAsErrors": false,
+  "validation": {
+    "notExported": false,
+    "invalidLink": true,
+    "notDocumented": false
+  }
+}

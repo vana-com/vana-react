@@ -1,0 +1,60 @@
+name: Prerelease
+
+on:
+  push:
+    branches:
+      - beta
+      - alpha
+      - 'feature/*'
+
+jobs:
+  publish-prerelease:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests
+        run: npm run test:coverage
+
+      - name: Set pre-release version
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          BASE_VERSION=${CURRENT_VERSION%-*}
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          
+          if [[ "$BRANCH_NAME" == "alpha" ]]; then
+            TAG="alpha"
+          elif [[ "$BRANCH_NAME" == "beta" ]]; then
+            TAG="beta"
+          else
+            TAG="feature"
+          fi
+          
+          npm version ${BASE_VERSION}-${TAG}.${SHORT_SHA} --no-git-tag-version
+
+      - name: Publish pre-release
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          if [[ "$BRANCH_NAME" == "alpha" ]]; then
+            npm publish --tag alpha
+          elif [[ "$BRANCH_NAME" == "beta" ]]; then
+            npm publish --tag beta
+          else
+            npm publish --tag next
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
