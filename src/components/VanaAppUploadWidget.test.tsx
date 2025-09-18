@@ -35,14 +35,14 @@ describe("VanaAppUploadWidget", () => {
     render(<VanaAppUploadWidget {...mockProps} />);
     const iframe = screen.getByTitle("Vana Data Upload Widget") as HTMLIFrameElement;
     expect(iframe).toBeInTheDocument();
-    expect(iframe.src).toBe("https://app.vana.com/embed/upload");
+    expect(iframe.src).toBe("https://app.vana.com/embed/upload/v2");
   });
 
   it("renders iframe with custom origin", () => {
     const customOrigin = "https://custom.vana.com";
     render(<VanaAppUploadWidget {...mockProps} iframeOrigin={customOrigin} />);
     const iframe = screen.getByTitle("Vana Data Upload Widget") as HTMLIFrameElement;
-    expect(iframe.src).toBe(`${customOrigin}/embed/upload`);
+    expect(iframe.src).toBe(`${customOrigin}/embed/upload/v2`);
   });
 
   it("applies custom className", () => {
