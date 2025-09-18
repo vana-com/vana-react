@@ -174,7 +174,7 @@ export function VanaAppUploadWidget({
   style,
 }: VanaAppUploadWidgetProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const iframeSrc = `${iframeOrigin}/embed/upload`;
+  const iframeSrc = `${iframeOrigin}/embed/upload/v2`;
 
   const handleMessage = useCallback(
     (event: MessageEvent) => {
