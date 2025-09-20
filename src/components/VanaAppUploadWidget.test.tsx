@@ -35,14 +35,14 @@ describe("VanaAppUploadWidget", () => {
     render(<VanaAppUploadWidget {...mockProps} />);
     const iframe = screen.getByTitle("Vana Data Upload Widget") as HTMLIFrameElement;
     expect(iframe).toBeInTheDocument();
-    expect(iframe.src).toBe("https://app.vana.com/embed/upload/v2");
+    expect(iframe.src).toBe("https://app.vana.com/embed/upload");
   });
 
   it("renders iframe with custom origin", () => {
     const customOrigin = "https://custom.vana.com";
     render(<VanaAppUploadWidget {...mockProps} iframeOrigin={customOrigin} />);
     const iframe = screen.getByTitle("Vana Data Upload Widget") as HTMLIFrameElement;
-    expect(iframe.src).toBe(`${customOrigin}/embed/upload/v2`);
+    expect(iframe.src).toBe(`${customOrigin}/embed/upload`);
   });
 
   it("applies custom className", () => {
@@ -155,6 +155,46 @@ describe("VanaAppUploadWidget", () => {
     expect(mockProps.onError).toHaveBeenCalledWith("Something went wrong");
   });
 
+  it("calls onError with fallback when error has no message", () => {
+    render(<VanaAppUploadWidget {...mockProps} />);
+
+    const errorEvent = new MessageEvent("message", {
+      data: { type: "error" },
+      origin: "https://app.vana.com",
+    });
+
+    messageListeners.forEach((listener) => listener(errorEvent));
+
+    expect(mockProps.onError).toHaveBeenCalledWith("An error occurred");
+  });
+
+  it("calls onClose when close message received", () => {
+    const onClose = vi.fn();
+    render(<VanaAppUploadWidget {...mockProps} onClose={onClose} />);
+
+    const closeEvent = new MessageEvent("message", {
+      data: { type: "close" },
+      origin: "https://app.vana.com",
+    });
+
+    messageListeners.forEach((listener) => listener(closeEvent));
+
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("does not throw when close message received without onClose handler", () => {
+    render(<VanaAppUploadWidget {...mockProps} />);
+
+    const closeEvent = new MessageEvent("message", {
+      data: { type: "close" },
+      origin: "https://app.vana.com",
+    });
+
+    expect(() => {
+      messageListeners.forEach((listener) => listener(closeEvent));
+    }).not.toThrow();
+  });
+
   it("resizes iframe when resize message received", () => {
     const { container } = render(<VanaAppUploadWidget {...mockProps} />);
     const iframe = container.querySelector("iframe") as HTMLIFrameElement;
@@ -192,7 +232,11 @@ describe("VanaAppUploadWidget", () => {
   });
 
   it("handles theme configuration", async () => {
-    const theme = { primaryColor: "#FF0000", backgroundColor: "#FFFFFF" };
+    const theme = {
+      "--primary": "#FF0000",
+      "--background": "#FFFFFF",
+      "--card": "#F0F0F0",
+    };
     const { container } = render(<VanaAppUploadWidget {...mockProps} theme={theme} />);
     const iframe = container.querySelector("iframe") as HTMLIFrameElement;
 
@@ -217,5 +261,100 @@ describe("VanaAppUploadWidget", () => {
         "https://app.vana.com"
       );
     });
+  });
+
+  it("handles multiple message types in sequence", () => {
+    const onClose = vi.fn();
+    const { container } = render(<VanaAppUploadWidget {...mockProps} onClose={onClose} />);
+    const iframe = container.querySelector("iframe") as HTMLIFrameElement;
+
+    // Simulate auth
+    const authEvent = new MessageEvent("message", {
+      data: { type: "auth", walletAddress: "0xABC" },
+      origin: "https://app.vana.com",
+    });
+    messageListeners.forEach((listener) => listener(authEvent));
+    expect(mockProps.onAuth).toHaveBeenCalledWith("0xABC");
+
+    // Simulate resize
+    const resizeEvent = new MessageEvent("message", {
+      data: { type: "resize", height: 500 },
+      origin: "https://app.vana.com",
+    });
+    messageListeners.forEach((listener) => listener(resizeEvent));
+    expect(iframe.style.height).toBe("500px");
+
+    // Simulate completion
+    const completeEvent = new MessageEvent("message", {
+      data: { type: "complete", result: "analysis results" },
+      origin: "https://app.vana.com",
+    });
+    messageListeners.forEach((listener) => listener(completeEvent));
+    expect(mockProps.onResult).toHaveBeenCalledWith("analysis results");
+
+    // Simulate close
+    const closeEvent = new MessageEvent("message", {
+      data: { type: "close" },
+      origin: "https://app.vana.com",
+    });
+    messageListeners.forEach((listener) => listener(closeEvent));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("iframe has correct sandbox attributes", () => {
+    render(<VanaAppUploadWidget {...mockProps} />);
+    const iframe = screen.getByTitle("Vana Data Upload Widget") as HTMLIFrameElement;
+    expect(iframe.getAttribute("sandbox")).toBe(
+      "allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox"
+    );
+  });
+
+  it("handles error with 'error' field instead of 'message'", () => {
+    render(<VanaAppUploadWidget {...mockProps} />);
+
+    const errorEvent = new MessageEvent("message", {
+      data: { type: "error", error: "Error from field" },
+      origin: "https://app.vana.com",
+    });
+
+    messageListeners.forEach((listener) => listener(errorEvent));
+
+    expect(mockProps.onError).toHaveBeenCalledWith("Error from field");
+  });
+
+  it("does not resize when height is missing", () => {
+    const { container } = render(<VanaAppUploadWidget {...mockProps} />);
+    const iframe = container.querySelector("iframe") as HTMLIFrameElement;
+    const originalHeight = iframe.style.height;
+
+    const resizeEvent = new MessageEvent("message", {
+      data: { type: "resize" },
+      origin: "https://app.vana.com",
+    });
+
+    messageListeners.forEach((listener) => listener(resizeEvent));
+
+    expect(iframe.style.height).toBe(originalHeight);
+  });
+
+  it("does not relay when data is missing", async () => {
+    const { container } = render(<VanaAppUploadWidget {...mockProps} />);
+    const iframe = container.querySelector("iframe") as HTMLIFrameElement;
+
+    const mockPostMessage = vi.fn();
+    Object.defineProperty(iframe, "contentWindow", {
+      value: { postMessage: mockPostMessage },
+      writable: true,
+    });
+
+    const relayEvent = new MessageEvent("message", {
+      data: { type: "relay" },
+      origin: "https://app.vana.com",
+    });
+
+    messageListeners.forEach((listener) => listener(relayEvent));
+
+    // Should not call postMessage when data is missing
+    expect(mockPostMessage).not.toHaveBeenCalled();
   });
 });
