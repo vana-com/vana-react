@@ -89,7 +89,7 @@ A customizable social sharing component designed for Vana Data Apps. Provides se
 
 - One-click sharing to Twitter, Facebook, LinkedIn, and Instagram
 - Copy-to-clipboard with automatic countdown timer
-- Customizable themes (light/dark/custom)
+- Theme customization with icon sizing
 - Flexible text generation with emojis and funny notes
 - Toast notifications with progress indicator
 - TypeScript support with full type definitions
