@@ -7,6 +7,7 @@ const App: React.FC = () => {
     console.log(`Shared on ${platform}`);
   };
 
+
   return (
     <div className="min-h-screen bg-gray-50 py-4 px-4 overflow-x-hidden">
       <div className="max-w-4xl mx-auto">
@@ -148,7 +149,7 @@ const App: React.FC = () => {
                   appName="Ice Cream Flavor"
                   shareContent="ChocoVision Leader (Dark Chocolate)"
                   shareEmoji="🍦"
-                  funnyNote="Apparently I'm in the same league as Beyoncé! 😎"
+                  funnyNote="Apparently I&apos;m in the same league as Beyoncé! 😎"
                   title="Share your flavor"
                   onShare={handleShare}
                   classNames={{
