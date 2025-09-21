@@ -9,7 +9,6 @@ export type {
   VanaAppSocialShareWidgetProps,
   VanaAppSocialShareTheme,
   VanaAppSocialShareClassNames,
-  ToastMessage,
   SocialPlatform,
   ShareButtonProps,
 } from "./components/VanaAppSocialShareWidget";
