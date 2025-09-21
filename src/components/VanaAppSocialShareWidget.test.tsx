@@ -38,25 +38,14 @@ describe("VanaAppSocialShareWidget", () => {
   });
 
   it("renders with custom title", () => {
-    render(
-      <VanaAppSocialShareWidget
-        appName="Test App"
-        shareContent="Test content"
-        title="Share your result"
-      />
-    );
+    render(<VanaAppSocialShareWidget shareContent="Test content" title="Share your result" />);
 
     expect(screen.getByText("Share your result")).toBeInTheDocument();
   });
 
   it("hides title when hideTitle is true", () => {
     render(
-      <VanaAppSocialShareWidget
-        appName="Test App"
-        shareContent="Test content"
-        title="Share your result"
-        hideTitle
-      />
+      <VanaAppSocialShareWidget shareContent="Test content" title="Share your result" hideTitle />
     );
 
     expect(screen.queryByText("Share your result")).not.toBeInTheDocument();
@@ -66,10 +55,7 @@ describe("VanaAppSocialShareWidget", () => {
     const onShare = vi.fn();
     render(
       <VanaAppSocialShareWidget
-        appName="Ice Cream Flavor"
-        shareContent="Vanilla Dream"
-        shareEmoji="🍦"
-        funnyNote="Sweet and classic!"
+        shareContent="🍦 Vanilla Dream\n\nSweet and classic!"
         callToAction="Discover your flavor @ app.vana.com"
         hashtag="#ICECREAM"
         onShare={onShare}
@@ -82,9 +68,7 @@ describe("VanaAppSocialShareWidget", () => {
       fireEvent.click(twitterButton);
     });
 
-    expect(mockWriteText).toHaveBeenCalledWith(
-      expect.stringContaining("Tried Vana's Ice Cream Flavor")
-    );
+    expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining("🍦 Vanilla Dream"));
     expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining("🍦 Vanilla Dream"));
     expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining("Sweet and classic!"));
     expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining("#ICECREAM"));
@@ -157,11 +141,7 @@ describe("VanaAppSocialShareWidget", () => {
   it("calls onCopySuccess with correct data", () => {
     const mockCopySuccess = vi.fn();
     render(
-      <VanaAppSocialShareWidget
-        appName="Test App"
-        shareContent="Test content"
-        onCopySuccess={mockCopySuccess}
-      />
+      <VanaAppSocialShareWidget shareContent="Test content" onCopySuccess={mockCopySuccess} />
     );
 
     const twitterButton = screen.getByLabelText("Share on twitter");
@@ -172,7 +152,7 @@ describe("VanaAppSocialShareWidget", () => {
 
     expect(mockCopySuccess).toHaveBeenCalledWith(
       "twitter",
-      expect.stringContaining("Tried Vana's Test App"),
+      expect.stringContaining("Test content"),
       3000
     );
     expect(mockCopySuccess).toHaveBeenCalledTimes(1);
@@ -181,11 +161,7 @@ describe("VanaAppSocialShareWidget", () => {
   it("shows internal toast even when onCopySuccess is provided", () => {
     const mockCopySuccess = vi.fn();
     render(
-      <VanaAppSocialShareWidget
-        appName="Test App"
-        shareContent="Test content"
-        onCopySuccess={mockCopySuccess}
-      />
+      <VanaAppSocialShareWidget shareContent="Test content" onCopySuccess={mockCopySuccess} />
     );
 
     const twitterButton = screen.getByLabelText("Share on twitter");
@@ -203,7 +179,6 @@ describe("VanaAppSocialShareWidget", () => {
     const mockCopySuccess = vi.fn();
     const { container } = render(
       <VanaAppSocialShareWidget
-        appName="Test App"
         shareContent="Test content"
         onCopySuccess={mockCopySuccess}
         hideToast={true}
@@ -225,7 +200,6 @@ describe("VanaAppSocialShareWidget", () => {
   it("applies custom classNames", () => {
     const { container } = render(
       <VanaAppSocialShareWidget
-        appName="Test App"
         shareContent="Test content"
         classNames={{
           root: "custom-root",
@@ -261,14 +235,7 @@ describe("VanaAppSocialShareWidget", () => {
   });
 
   it("handles empty optional props gracefully", () => {
-    render(
-      <VanaAppSocialShareWidget
-        appName="Test App"
-        shareContent="Test content"
-        shareEmoji=""
-        funnyNote=""
-      />
-    );
+    render(<VanaAppSocialShareWidget shareContent="Test content" />);
 
     const twitterButton = screen.getByLabelText("Share on twitter");
     fireEvent.click(twitterButton);
@@ -276,7 +243,7 @@ describe("VanaAppSocialShareWidget", () => {
     const clipboardText = mockWriteText.mock.calls[0][0];
     expect(clipboardText).not.toContain("undefined");
     expect(clipboardText).not.toContain("null");
-    expect(clipboardText).toContain("Tried Vana's Test App");
+    expect(clipboardText).toContain("Test content");
     expect(clipboardText).toContain("Test content");
   });
 
@@ -287,13 +254,7 @@ describe("VanaAppSocialShareWidget", () => {
       </button>
     ));
 
-    render(
-      <VanaAppSocialShareWidget
-        appName="Test App"
-        shareContent="Test content"
-        buttonComponent={CustomButton}
-      />
-    );
+    render(<VanaAppSocialShareWidget shareContent="Test content" buttonComponent={CustomButton} />);
 
     expect(CustomButton).toHaveBeenCalledTimes(4);
     expect(screen.getByText("Custom twitter")).toBeInTheDocument();
@@ -304,13 +265,7 @@ describe("VanaAppSocialShareWidget", () => {
       <div data-testid={`custom-${platform}`}>{platform.toUpperCase()}</div>
     ));
 
-    render(
-      <VanaAppSocialShareWidget
-        appName="Test App"
-        shareContent="Test content"
-        renderButton={renderButton}
-      />
-    );
+    render(<VanaAppSocialShareWidget shareContent="Test content" renderButton={renderButton} />);
 
     expect(renderButton).toHaveBeenCalledTimes(4);
     expect(screen.getByTestId("custom-twitter")).toBeInTheDocument();
