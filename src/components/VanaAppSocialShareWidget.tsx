@@ -286,21 +286,25 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
       let countdown = totalTime;
       let progress = 100;
 
-      const showToast = (message: ToastMessage) => {
-        if (onShowToast) {
-          onShowToast(message);
-        } else {
-          setInternalToast({ message });
-        }
-      };
-
-      // Initial toast - send clean data to external handlers
-      showToast({
-        title: "Copied to clipboard!",
-        description: `Opening ${platform} in ${countdown}... Paste your message there.`,
-        progress,
-        duration: Infinity,
-      });
+      // For external handlers: call once with initial message
+      if (onShowToast) {
+        onShowToast({
+          title: "Copied to clipboard!",
+          description: `Opening ${platform} in ${countdown} seconds... Paste your message there.`,
+          progress,
+          duration: 3000, // 3 seconds, not Infinity
+        });
+      } else {
+        // For internal toast: set initial state
+        setInternalToast({
+          message: {
+            title: "Copied to clipboard!",
+            description: `Opening ${platform} in ${countdown}... Paste your message there.`,
+            progress,
+            duration: Infinity,
+          },
+        });
+      }
 
       // Update progress
       const progressTimer = setInterval(() => {
@@ -312,12 +316,17 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
         }
 
         if (progress > 0) {
-          showToast({
-            title: "Copied to clipboard!",
-            description: `Opening ${platform} in ${countdown}... Paste your message there.`,
-            progress,
-            duration: Infinity,
-          });
+          // Only update internal toast, never call external handler again
+          if (!onShowToast) {
+            setInternalToast({
+              message: {
+                title: "Copied to clipboard!",
+                description: `Opening ${platform} in ${countdown}... Paste your message there.`,
+                progress,
+                duration: Infinity,
+              },
+            });
+          }
         } else {
           clearInterval(progressTimer);
           // Clear toast

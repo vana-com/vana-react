@@ -167,7 +167,8 @@ describe("VanaAppSocialShareWidget", () => {
     expect(mockToastHandler).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Copied to clipboard!",
-        duration: Infinity,
+        duration: 3000,
+        progress: 100,
       })
     );
 
