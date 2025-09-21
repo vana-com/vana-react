@@ -199,6 +199,29 @@ describe("VanaAppSocialShareWidget", () => {
     expect(screen.getByText("Copied to clipboard!")).toBeInTheDocument();
   });
 
+  it("hides internal toast when hideToast is true", () => {
+    const mockCopySuccess = vi.fn();
+    const { container } = render(
+      <VanaAppSocialShareWidget
+        appName="Test App"
+        shareContent="Test content"
+        onCopySuccess={mockCopySuccess}
+        hideToast={true}
+      />
+    );
+
+    const twitterButton = screen.getByLabelText("Share on twitter");
+
+    act(() => {
+      fireEvent.click(twitterButton);
+    });
+
+    // External callback should work but no internal toast
+    expect(mockCopySuccess).toHaveBeenCalled();
+    expect(screen.queryByText("Copied to clipboard!")).not.toBeInTheDocument();
+    expect(container.querySelector('[data-toast="true"]')).not.toBeInTheDocument();
+  });
+
   it("applies custom classNames", () => {
     const { container } = render(
       <VanaAppSocialShareWidget

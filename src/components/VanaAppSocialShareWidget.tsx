@@ -82,6 +82,8 @@ export interface VanaAppSocialShareWidgetProps {
   classNames?: VanaAppSocialShareClassNames;
   /** Hide the title section completely */
   hideTitle?: boolean;
+  /** Hide the internal toast notification (use when providing custom toast via onCopySuccess) */
+  hideToast?: boolean;
   /** Callback fired when text is copied to clipboard, before opening platform */
   onCopySuccess?: (platform: SocialPlatform, shareText: string, openDelayMs: number) => void;
   /** Callback fired when user initiates sharing on any platform */
@@ -229,6 +231,7 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
     theme = {},
     classNames = {},
     hideTitle = false,
+    hideToast = false,
     onCopySuccess,
     onShare,
     renderButton,
@@ -274,56 +277,63 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
       const delayMs = 3000;
       onCopySuccess?.(platform.toLowerCase() as SocialPlatform, text, delayMs);
 
-      // Setup internal toast with countdown
-      const totalTime = 3;
-      let countdown = totalTime;
-      let progress = 100;
+      // Setup internal toast with countdown (if not hidden)
+      if (!hideToast) {
+        const totalTime = 3;
+        let countdown = totalTime;
+        let progress = 100;
 
-      // Set initial internal toast state
-      setInternalToast({
-        message: {
-          title: "Copied to clipboard!",
-          description: `Opening ${platform} in ${countdown}... Paste your message there.`,
-          progress,
-          duration: Infinity,
-        },
-      });
+        // Set initial internal toast state
+        setInternalToast({
+          message: {
+            title: "Copied to clipboard!",
+            description: `Opening ${platform} in ${countdown}... Paste your message there.`,
+            progress,
+            duration: Infinity,
+          },
+        });
 
-      // Update progress for internal toast animation
-      const progressTimer = setInterval(() => {
-        progress = Math.max(0, progress - 100 / (totalTime * 10));
-        const currentCountdown = Math.ceil(progress / (100 / totalTime));
+        // Update progress for internal toast animation
+        const progressTimer = setInterval(() => {
+          progress = Math.max(0, progress - 100 / (totalTime * 10));
+          const currentCountdown = Math.ceil(progress / (100 / totalTime));
 
-        if (currentCountdown !== countdown && currentCountdown > 0) {
-          countdown = currentCountdown;
+          if (currentCountdown !== countdown && currentCountdown > 0) {
+            countdown = currentCountdown;
+          }
+
+          if (progress > 0) {
+            // Update internal toast with live countdown
+            setInternalToast({
+              message: {
+                title: "Copied to clipboard!",
+                description: `Opening ${platform} in ${countdown}... Paste your message there.`,
+                progress,
+                duration: Infinity,
+              },
+            });
+          } else {
+            clearInterval(progressTimer);
+            // Clear internal toast
+            flushSync(() => {
+              setInternalToast({ message: null });
+            });
+            // Open platform securely
+            window.open(url, "_blank", "noopener,noreferrer");
+          }
+        }, 100);
+
+        // Store timer for cleanup
+        if (toastTimerRef.current) {
+          clearInterval(toastTimerRef.current);
         }
-
-        if (progress > 0) {
-          // Update internal toast with live countdown
-          setInternalToast({
-            message: {
-              title: "Copied to clipboard!",
-              description: `Opening ${platform} in ${countdown}... Paste your message there.`,
-              progress,
-              duration: Infinity,
-            },
-          });
-        } else {
-          clearInterval(progressTimer);
-          // Clear internal toast
-          flushSync(() => {
-            setInternalToast({ message: null });
-          });
-          // Open platform securely
+        toastTimerRef.current = progressTimer;
+      } else {
+        // No toast - just open after delay
+        setTimeout(() => {
           window.open(url, "_blank", "noopener,noreferrer");
-        }
-      }, 100);
-
-      // Store timer for cleanup
-      if (toastTimerRef.current) {
-        clearInterval(toastTimerRef.current);
+        }, 3000);
       }
-      toastTimerRef.current = progressTimer;
     };
 
     // Cleanup on unmount
@@ -385,7 +395,8 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
         </div>
 
         {/* Internal Toast - rendered via portal */}
-        {internalToast.message &&
+        {!hideToast &&
+          internalToast.message &&
           typeof document !== "undefined" &&
           createPortal(
             <>
