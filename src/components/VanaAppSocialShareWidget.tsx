@@ -65,10 +65,8 @@ export interface VanaAppSocialShareWidgetProps {
   title?: string;
   /** Main content to share - user's result, score, or generated content */
   shareContent: string;
-  /** Custom call-to-action text. Default: "Try on app.vana.com" */
-  callToAction?: string;
-  /** Hashtag to append to share text. Default: "#datarevolution" */
-  hashtag?: string;
+  /** Suffix appended to share content. Default: "\n\nTry @ app.vana.com\n#datarevolution". Set to empty string to disable. */
+  suffix?: string;
   /** Theme configuration for visual customization */
   theme?: VanaAppSocialShareTheme;
   /** CSS class names for styling all component parts */
@@ -177,9 +175,9 @@ DefaultShareButton.displayName = "DefaultShareButton";
  * design flexibility.
  *
  * **Key Features:**
- * - Automatic share text generation with app name, emojis, and custom notes
+ * - Automatic share text generation with custom content and suffix
  * - Copy-to-clipboard with visual progress indicator
- * - Platform-specific URL handling (full URLs for Instagram/Facebook)
+ * - Consistent text across all platforms (no platform-specific URL handling needed)
  * - Customizable via classNames prop for every component part
  * - TypeScript support with full type definitions
  *
@@ -214,8 +212,7 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
   ({
     title = "Share",
     shareContent,
-    callToAction = "Try on app.vana.com",
-    hashtag = "#datarevolution",
+    suffix = "\n\nTry @ app.vana.com\n#datarevolution",
     theme = {},
     classNames = {},
     hideTitle = false,
@@ -236,19 +233,9 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
 
     const toastTimerRef = useRef<NodeJS.Timeout>();
 
-    const generateShareText = useCallback(
-      (platform: SocialPlatform): string => {
-        const cta = `\n\n${callToAction}`;
-        const tag = `\n${hashtag}`;
-
-        // Instagram and Facebook need the full URL in the text
-        const needsFullUrl = platform === "instagram" || platform === "facebook";
-        const ctaWithUrl = needsFullUrl ? cta.replace("app.vana.com", "https://app.vana.com") : cta;
-
-        return `${shareContent}${ctaWithUrl}${tag}`;
-      },
-      [shareContent, callToAction, hashtag]
-    );
+    const generateShareText = useCallback((): string => {
+      return `${shareContent}${suffix}`;
+    }, [shareContent, suffix]);
 
     const copyAndOpenWithCountdown = (text: string, platform: string, url: string) => {
       // Copy to clipboard
@@ -345,7 +332,7 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
         <div className={classNames.buttons}>
           {SHARE_BUTTONS.map((config) => {
             const Icon = config.Icon;
-            const text = generateShareText(config.platform);
+            const text = generateShareText();
             const url = config.getUrl(text);
 
             const buttonClassName = classNames.button || "";

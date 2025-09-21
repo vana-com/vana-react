@@ -33,6 +33,10 @@ const App: React.FC = () => {
               <div className="p-8">
                 <VanaAppSocialShareWidget
                   shareContent="🔮 Your personalized oracle reading"
+                  suffix={`
+
+Find out: app.vana.org
+#datarevolution`}
                   title="SHARE YOUR ORACLE READING"
                   onShare={handleShare}
                   classNames={{
@@ -74,6 +78,10 @@ const App: React.FC = () => {
               <div className="relative p-8 border-4 border-black bg-white/10">
                 <VanaAppSocialShareWidget
                   shareContent="📢 My amazing score"
+                  suffix={`
+
+What's your score? app.vana.com
+#datarevolution`}
                   title="SHARE UR SCORE:"
                   onShare={handleShare}
                   buttonComponent={({ platform, Icon, onClick }) => (
@@ -148,6 +156,10 @@ const App: React.FC = () => {
 
                 <VanaAppSocialShareWidget
                   shareContent="If I was an Ice Cream Flavour, I'd be ChocoVision Leader, Dark Chocolate - Apparently I'm in the same league as Beyoncé! 😎"
+                  suffix={`
+
+Taste your data: app.vana.com
+#datarevolution`}
                   title="Share your flavor"
                   onShare={handleShare}
                   onCopySuccess={handleCopySuccess}
@@ -194,6 +206,10 @@ const App: React.FC = () => {
 
                 <VanaAppSocialShareWidget
                   shareContent="🪙 The Sovereign Network Diplomat (ATOM)\n\nSound like me? 💎✋"
+                  suffix={`
+
+Try Coinology on app.vana.com
+#datarevolution`}
                   title="Share your token"
                   onShare={handleShare}
                   classNames={{
@@ -282,8 +298,11 @@ const App: React.FC = () => {
 function MyApp() {
   return (
     <VanaAppSocialShareWidget
-      appName="Ice Cream Flavor"
       shareContent="🍦 ChocoVision Leader"
+      suffix={\`
+
+Taste your data: app.vana.com
+#datarevolution\`}
       title="Share your flavor"
 
       // Apply Tailwind classes to every part

@@ -28,7 +28,7 @@ describe("VanaAppSocialShareWidget", () => {
   });
 
   it("renders with default props", () => {
-    render(<VanaAppSocialShareWidget appName="Test App" shareContent="Test content" />);
+    render(<VanaAppSocialShareWidget shareContent="Test content" />);
 
     expect(screen.getByText("Share")).toBeInTheDocument();
     expect(screen.getByLabelText("Share on twitter")).toBeInTheDocument();
@@ -56,8 +56,7 @@ describe("VanaAppSocialShareWidget", () => {
     render(
       <VanaAppSocialShareWidget
         shareContent="🍦 Vanilla Dream\n\nSweet and classic!"
-        callToAction="Discover your flavor @ app.vana.com"
-        hashtag="#ICECREAM"
+        suffix="\n\nDiscover your flavor @ app.vana.com\n#ICECREAM"
         onShare={onShare}
       />
     );
@@ -69,14 +68,16 @@ describe("VanaAppSocialShareWidget", () => {
     });
 
     expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining("🍦 Vanilla Dream"));
-    expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining("🍦 Vanilla Dream"));
     expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining("Sweet and classic!"));
+    expect(mockWriteText).toHaveBeenCalledWith(
+      expect.stringContaining("Discover your flavor @ app.vana.com")
+    );
     expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining("#ICECREAM"));
     expect(onShare).toHaveBeenCalledWith("twitter");
   });
 
   it("copies to clipboard and opens platform after countdown", async () => {
-    render(<VanaAppSocialShareWidget appName="Test App" shareContent="Test content" />);
+    render(<VanaAppSocialShareWidget shareContent="Test content" />);
 
     const twitterButton = screen.getByLabelText("Share on twitter");
 
@@ -105,7 +106,7 @@ describe("VanaAppSocialShareWidget", () => {
   });
 
   it("handles different platforms correctly", () => {
-    render(<VanaAppSocialShareWidget appName="Test App" shareContent="Test content" />);
+    render(<VanaAppSocialShareWidget shareContent="Test content" />);
 
     // Test Facebook
     const facebookButton = screen.getByLabelText("Share on facebook");
@@ -218,20 +219,22 @@ describe("VanaAppSocialShareWidget", () => {
     expect(twitterButton).toHaveClass("custom-button");
   });
 
-  it("includes full URL for Instagram and Facebook", () => {
-    render(<VanaAppSocialShareWidget appName="Test App" shareContent="Test content" />);
+  it("uses same share text for all platforms", () => {
+    render(<VanaAppSocialShareWidget shareContent="Test content" />);
 
-    // Test Instagram includes full URL
+    // Test Instagram uses bare domain (not clickable anyway)
     const instagramButton = screen.getByLabelText("Share on instagram");
     fireEvent.click(instagramButton);
-    expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining("https://app.vana.com"));
+    expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining("app.vana.com"));
+    expect(mockWriteText).not.toHaveBeenCalledWith(expect.stringContaining("https://app.vana.com"));
 
     vi.clearAllMocks();
 
-    // Test Facebook includes full URL
+    // Test Facebook uses bare domain (auto-linkified)
     const facebookButton = screen.getByLabelText("Share on facebook");
     fireEvent.click(facebookButton);
-    expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining("https://app.vana.com"));
+    expect(mockWriteText).toHaveBeenCalledWith(expect.stringContaining("app.vana.com"));
+    expect(mockWriteText).not.toHaveBeenCalledWith(expect.stringContaining("https://app.vana.com"));
   });
 
   it("handles empty optional props gracefully", () => {
@@ -273,9 +276,7 @@ describe("VanaAppSocialShareWidget", () => {
   });
 
   it("adds data attributes for styling hooks", () => {
-    const { container } = render(
-      <VanaAppSocialShareWidget appName="Test App" shareContent="Test content" />
-    );
+    const { container } = render(<VanaAppSocialShareWidget shareContent="Test content" />);
 
     expect(container.querySelector('[data-component="vana-app-social-share"]')).toBeInTheDocument();
     expect(container.querySelector('[data-platform="twitter"]')).toBeInTheDocument();
