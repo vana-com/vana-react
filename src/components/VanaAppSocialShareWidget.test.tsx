@@ -76,7 +76,7 @@ describe("VanaAppSocialShareWidget", () => {
     expect(onShare).toHaveBeenCalledWith("twitter");
   });
 
-  it("copies to clipboard and opens platform after countdown", async () => {
+  it("copies to clipboard and shows instruction toast", async () => {
     render(<VanaAppSocialShareWidget shareContent="Test content" />);
 
     const twitterButton = screen.getByLabelText("Share on twitter");
@@ -88,21 +88,19 @@ describe("VanaAppSocialShareWidget", () => {
     // Check clipboard was called immediately
     expect(mockWriteText).toHaveBeenCalled();
 
-    // Check toast appears
+    // Check toast appears with instructions
     expect(screen.getByText("Copied to clipboard!")).toBeInTheDocument();
-    expect(screen.getByText(/Opening Twitter in 3/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Now go to Twitter and paste your message to share.")
+    ).toBeInTheDocument();
 
-    // Fast-forward to completion (3+ seconds)
+    // Fast-forward to toast disappearance (4+ seconds)
     act(() => {
-      vi.advanceTimersByTime(3100);
+      vi.advanceTimersByTime(4100);
     });
 
-    // Check window.open was called
-    expect(mockOpen).toHaveBeenCalledWith(
-      expect.stringContaining("twitter.com"),
-      "_blank",
-      "noopener,noreferrer"
-    );
+    // Check window.open was NOT called (no automatic opening)
+    expect(mockOpen).not.toHaveBeenCalled();
   });
 
   it("handles different platforms correctly", () => {
@@ -111,32 +109,27 @@ describe("VanaAppSocialShareWidget", () => {
     // Test Facebook
     const facebookButton = screen.getByLabelText("Share on facebook");
     fireEvent.click(facebookButton);
-    vi.advanceTimersByTime(3100);
-    expect(mockOpen).toHaveBeenCalledWith(
-      expect.stringContaining("facebook.com"),
-      "_blank",
-      "noopener,noreferrer"
-    );
+    expect(mockWriteText).toHaveBeenCalled();
+    expect(
+      screen.getByText("Now go to Facebook and paste your message to share.")
+    ).toBeInTheDocument();
 
     // Test LinkedIn
     const linkedinButton = screen.getByLabelText("Share on linkedin");
     fireEvent.click(linkedinButton);
-    vi.advanceTimersByTime(3100);
-    expect(mockOpen).toHaveBeenCalledWith(
-      expect.stringContaining("linkedin.com"),
-      "_blank",
-      "noopener,noreferrer"
-    );
+    expect(
+      screen.getByText("Now go to Linkedin and paste your message to share.")
+    ).toBeInTheDocument();
 
     // Test Instagram
     const instagramButton = screen.getByLabelText("Share on instagram");
     fireEvent.click(instagramButton);
-    vi.advanceTimersByTime(3100);
-    expect(mockOpen).toHaveBeenCalledWith(
-      expect.stringContaining("instagram.com"),
-      "_blank",
-      "noopener,noreferrer"
-    );
+    expect(
+      screen.getByText("Now go to Instagram and paste your message to share.")
+    ).toBeInTheDocument();
+
+    // No automatic window opening for any platform
+    expect(mockOpen).not.toHaveBeenCalled();
   });
 
   it("calls onCopySuccess with correct data", () => {
@@ -153,8 +146,7 @@ describe("VanaAppSocialShareWidget", () => {
 
     expect(mockCopySuccess).toHaveBeenCalledWith(
       "twitter",
-      expect.stringContaining("Test content"),
-      3000
+      expect.stringContaining("Test content")
     );
     expect(mockCopySuccess).toHaveBeenCalledTimes(1);
   });
@@ -281,5 +273,63 @@ describe("VanaAppSocialShareWidget", () => {
     expect(container.querySelector('[data-component="vana-app-social-share"]')).toBeInTheDocument();
     expect(container.querySelector('[data-platform="twitter"]')).toBeInTheDocument();
     expect(container.querySelector('[data-platform="facebook"]')).toBeInTheDocument();
+  });
+
+  it("uses custom toastDuration", () => {
+    render(<VanaAppSocialShareWidget shareContent="Test content" toastDuration={2000} />);
+
+    const twitterButton = screen.getByLabelText("Share on twitter");
+
+    act(() => {
+      fireEvent.click(twitterButton);
+    });
+
+    // Toast should appear
+    expect(screen.getByText("Copied to clipboard!")).toBeInTheDocument();
+
+    // Fast-forward to just before custom duration (2 seconds)
+    act(() => {
+      vi.advanceTimersByTime(1900);
+    });
+
+    // Toast should still be visible
+    expect(screen.getByText("Copied to clipboard!")).toBeInTheDocument();
+
+    // Fast-forward past custom duration
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+
+    // Toast should be gone
+    expect(screen.queryByText("Copied to clipboard!")).not.toBeInTheDocument();
+  });
+
+  it("uses default toastDuration when not specified", () => {
+    render(<VanaAppSocialShareWidget shareContent="Test content" />);
+
+    const twitterButton = screen.getByLabelText("Share on twitter");
+
+    act(() => {
+      fireEvent.click(twitterButton);
+    });
+
+    // Toast should appear
+    expect(screen.getByText("Copied to clipboard!")).toBeInTheDocument();
+
+    // Fast-forward to just before default duration (4 seconds)
+    act(() => {
+      vi.advanceTimersByTime(3900);
+    });
+
+    // Toast should still be visible
+    expect(screen.getByText("Copied to clipboard!")).toBeInTheDocument();
+
+    // Fast-forward past default duration
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+
+    // Toast should be gone
+    expect(screen.queryByText("Copied to clipboard!")).not.toBeInTheDocument();
   });
 });

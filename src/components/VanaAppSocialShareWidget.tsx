@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { flushSync, createPortal } from "react-dom";
+import { createPortal } from "react-dom";
 import { Twitter, Facebook, Linkedin, Camera, Share2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -75,8 +75,10 @@ export interface VanaAppSocialShareWidgetProps {
   hideTitle?: boolean;
   /** Hide the internal toast notification (use when providing custom toast via onCopySuccess) */
   hideToast?: boolean;
-  /** Callback fired when text is copied to clipboard, before opening platform */
-  onCopySuccess?: (platform: SocialPlatform, shareText: string, openDelayMs: number) => void;
+  /** Duration in milliseconds for how long the toast should be visible. Default: 4000 (4 seconds) */
+  toastDuration?: number;
+  /** Callback fired when text is copied to clipboard */
+  onCopySuccess?: (platform: SocialPlatform, shareText: string) => void;
   /** Callback fired when user initiates sharing on any platform */
   onShare?: (platform: SocialPlatform) => void;
   /** Render prop for complete button customization */
@@ -166,17 +168,17 @@ const DefaultShareButton: React.FC<ShareButtonProps> = React.memo(
 DefaultShareButton.displayName = "DefaultShareButton";
 
 /**
- * Provides seamless social sharing for Vana Apps with copy-to-clipboard and countdown notifications.
+ * Provides seamless social sharing for Vana Apps with copy-to-clipboard and simple instructions.
  *
  * @remarks
  * VanaAppSocialShareWidget enables one-click sharing to Twitter, Facebook, LinkedIn, and Instagram.
- * Uses the navigator.clipboard API for secure text copying and includes a 3-second countdown timer
- * before opening the target platform. Component is completely unstyled by default for maximum
- * design flexibility.
+ * Uses the navigator.clipboard API for secure text copying and shows simple instructions to
+ * paste the content on the target platform. Component is completely unstyled by default for
+ * maximum design flexibility.
  *
  * **Key Features:**
  * - Automatic share text generation with custom content and suffix
- * - Copy-to-clipboard with visual progress indicator
+ * - Copy-to-clipboard with simple instruction notifications
  * - Consistent text across all platforms (no platform-specific URL handling needed)
  * - Customizable via classNames prop for every component part
  * - TypeScript support with full type definitions
@@ -217,6 +219,7 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
     classNames = {},
     hideTitle = false,
     hideToast = false,
+    toastDuration = 4000,
     onCopySuccess,
     onShare,
     renderButton,
@@ -226,7 +229,6 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
       message: {
         title: string;
         description: React.ReactNode;
-        progress?: number;
         duration?: number;
       } | null;
     }>({ message: null });
@@ -237,73 +239,33 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
       return `${shareContent}${suffix}`;
     }, [shareContent, suffix]);
 
-    const copyAndOpenWithCountdown = (text: string, platform: string, url: string) => {
+    const copyAndShowInstructions = (text: string, platform: string) => {
       // Copy to clipboard
       navigator.clipboard.writeText(text);
 
       // Trigger share callback (lowercase platform name)
       onShare?.(platform.toLowerCase() as SocialPlatform);
 
-      // Call external copy success handler with raw data
-      const delayMs = 3000;
-      onCopySuccess?.(platform.toLowerCase() as SocialPlatform, text, delayMs);
+      // Call external copy success handler
+      onCopySuccess?.(platform.toLowerCase() as SocialPlatform, text);
 
-      // Setup internal toast with countdown (if not hidden)
+      // Show simple toast with instructions (if not hidden)
       if (!hideToast) {
-        const totalTime = 3;
-        let countdown = totalTime;
-        let progress = 100;
-
-        // Set initial internal toast state
         setInternalToast({
           message: {
             title: "Copied to clipboard!",
-            description: `Opening ${platform} in ${countdown}... Paste your message there.`,
-            progress,
-            duration: Infinity,
+            description: `Now go to ${platform} and paste your message to share.`,
+            duration: toastDuration,
           },
         });
 
-        // Update progress for internal toast animation
-        const progressTimer = setInterval(() => {
-          progress = Math.max(0, progress - 100 / (totalTime * 10));
-          const currentCountdown = Math.ceil(progress / (100 / totalTime));
-
-          if (currentCountdown !== countdown && currentCountdown > 0) {
-            countdown = currentCountdown;
-          }
-
-          if (progress > 0) {
-            // Update internal toast with live countdown
-            setInternalToast({
-              message: {
-                title: "Copied to clipboard!",
-                description: `Opening ${platform} in ${countdown}... Paste your message there.`,
-                progress,
-                duration: Infinity,
-              },
-            });
-          } else {
-            clearInterval(progressTimer);
-            // Clear internal toast
-            flushSync(() => {
-              setInternalToast({ message: null });
-            });
-            // Open platform securely
-            window.open(url, "_blank", "noopener,noreferrer");
-          }
-        }, 100);
-
-        // Store timer for cleanup
+        // Auto-hide toast after duration
         if (toastTimerRef.current) {
-          clearInterval(toastTimerRef.current);
+          clearTimeout(toastTimerRef.current);
         }
-        toastTimerRef.current = progressTimer;
-      } else {
-        // No toast - just open after delay
-        setTimeout(() => {
-          window.open(url, "_blank", "noopener,noreferrer");
-        }, 3000);
+        toastTimerRef.current = setTimeout(() => {
+          setInternalToast({ message: null });
+        }, toastDuration);
       }
     };
 
@@ -311,7 +273,7 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
     useEffect(() => {
       return () => {
         if (toastTimerRef.current) {
-          clearInterval(toastTimerRef.current);
+          clearTimeout(toastTimerRef.current);
         }
       };
     }, []);
@@ -333,15 +295,13 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
           {SHARE_BUTTONS.map((config) => {
             const Icon = config.Icon;
             const text = generateShareText();
-            const url = config.getUrl(text);
 
             const buttonClassName = classNames.button || "";
 
             const handleClick = () =>
-              copyAndOpenWithCountdown(
+              copyAndShowInstructions(
                 text,
-                config.platform.charAt(0).toUpperCase() + config.platform.slice(1),
-                url
+                config.platform.charAt(0).toUpperCase() + config.platform.slice(1)
               );
 
             if (renderButton) {
@@ -408,31 +368,6 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
                     {internalToast.message.title}
                   </div>
                   <div style={{ opacity: 0.8 }}>{internalToast.message.description}</div>
-                  {typeof internalToast.message.progress === "number" && (
-                    <div
-                      className={classNames.progress}
-                      style={
-                        classNames.progress
-                          ? {}
-                          : {
-                              marginTop: "8px",
-                              height: "3px",
-                              backgroundColor: "rgba(0,0,0,0.1)",
-                              borderRadius: "2px",
-                              overflow: "hidden",
-                            }
-                      }
-                    >
-                      <div
-                        style={{
-                          width: `${internalToast.message.progress}%`,
-                          height: "100%",
-                          backgroundColor: "#666",
-                          transition: "width 100ms linear",
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
             </>,
