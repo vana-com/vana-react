@@ -17,10 +17,8 @@ const App: React.FC = () => {
         {/* Real App Examples */}
         <section className="mb-16">
           <h2 className="text-2xl font-semibold mb-3 text-gray-800">Real App Designs</h2>
-          <p className="text-gray-600 mb-6">
-            Recreating actual designs from Vana apps:
-          </p>
-          
+          <p className="text-gray-600 mb-6">Recreating actual designs from Vana apps:</p>
+
           <div className="space-y-8 md:grid md:grid-cols-2 md:gap-8 md:space-y-0">
             {/* Oracle Reading (Dark/Neon Green) */}
             <div className="bg-black rounded-lg overflow-hidden">
@@ -33,10 +31,13 @@ const App: React.FC = () => {
                   onShare={handleShare}
                   classNames={{
                     root: "text-center",
-                    title: "flex items-center justify-center gap-2 mb-8 text-sm text-[#00ff00] font-mono uppercase tracking-wider",
+                    title:
+                      "flex items-center justify-center gap-2 mb-8 text-sm text-[#00ff00] font-mono uppercase tracking-wider",
                     buttons: "flex items-center justify-center gap-3 md:gap-4",
-                    button: "w-10 h-10 md:w-14 md:h-14 rounded-full border-2 border-[#00ff00] bg-transparent text-[#00ff00] hover:bg-[#00ff00] hover:text-black transition-all duration-300 flex items-center justify-center cursor-pointer",
-                    toast: "fixed bottom-4 right-4 bg-black border border-[#00ff00] text-[#00ff00] rounded-lg p-4 min-w-[280px] max-w-[90vw] z-50",
+                    button:
+                      "w-10 h-10 md:w-14 md:h-14 rounded-full border-2 border-[#00ff00] bg-transparent text-[#00ff00] hover:bg-[#00ff00] hover:text-black transition-all duration-300 flex items-center justify-center cursor-pointer",
+                    toast:
+                      "fixed bottom-4 right-4 bg-black border border-[#00ff00] text-[#00ff00] rounded-lg p-4 min-w-[280px] max-w-[90vw] z-50",
                     toastContent: "text-sm",
                     progress: "!bg-[#00ff00]/20",
                   }}
@@ -46,13 +47,13 @@ const App: React.FC = () => {
             </div>
 
             {/* Retro Score (Pink Background) */}
-            <div 
+            <div
               className="rounded-lg overflow-hidden relative"
               style={{
-                background: 'linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)',
+                background: "linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)",
               }}
             >
-              <div 
+              <div
                 className="absolute inset-0 opacity-30"
                 style={{
                   backgroundImage: `repeating-linear-gradient(
@@ -61,7 +62,7 @@ const App: React.FC = () => {
                     transparent 10px,
                     rgba(255,255,255,0.1) 10px,
                     rgba(255,255,255,0.1) 20px
-                  )`
+                  )`,
                 }}
               />
               <div className="relative p-8 border-4 border-black bg-white/10">
@@ -80,18 +81,20 @@ const App: React.FC = () => {
                     >
                       <Icon size={18} />
                       <span>
-                        {platform === 'twitter' && 'TWEET'}
-                        {platform === 'facebook' && 'FB'}
-                        {platform === 'linkedin' && 'LINKED'}
-                        {platform === 'instagram' && 'INSTA'}
+                        {platform === "twitter" && "TWEET"}
+                        {platform === "facebook" && "FB"}
+                        {platform === "linkedin" && "LINKED"}
+                        {platform === "instagram" && "INSTA"}
                       </span>
                     </button>
                   )}
                   classNames={{
                     root: "text-center",
-                    title: "flex items-center justify-center gap-2 mb-6 text-black font-bold uppercase tracking-wider",
+                    title:
+                      "flex items-center justify-center gap-2 mb-6 text-black font-bold uppercase tracking-wider",
                     buttons: "flex items-center justify-center gap-3 flex-wrap",
-                    toast: "fixed bottom-4 right-4 bg-black text-white rounded p-4 min-w-[280px] max-w-[90vw] z-50",
+                    toast:
+                      "fixed bottom-4 right-4 bg-black text-white rounded p-4 min-w-[280px] max-w-[90vw] z-50",
                     toastContent: "text-sm",
                   }}
                   theme={{ iconSize: 20 }}
@@ -137,7 +140,7 @@ const App: React.FC = () => {
                   <div className="text-5xl mb-4">🍦</div>
                   <div className="text-2xl font-bold text-purple-600 mb-2">ChocoVision Leader</div>
                   <p className="text-gray-600">
-                    Dark Chocolate - Apparently I'm in the same league as Beyoncé!
+                    Dark Chocolate - Apparently I&apos;m in the same league as Beyoncé!
                   </p>
                 </div>
 
@@ -150,10 +153,13 @@ const App: React.FC = () => {
                   onShare={handleShare}
                   classNames={{
                     root: "text-center",
-                    title: "flex items-center justify-center gap-1 mb-6 text-sm text-[#5851FF] font-medium",
+                    title:
+                      "flex items-center justify-center gap-1 mb-6 text-sm text-[#5851FF] font-medium",
                     buttons: "flex items-center justify-center gap-3 md:gap-4",
-                    button: "w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center cursor-pointer [data-platform='twitter']:text-[#1DA1F2] [data-platform='facebook']:text-[#1877F2] [data-platform='linkedin']:text-[#0A66C2] [data-platform='instagram']:text-[#E4405F]",
-                    toast: "fixed bottom-4 right-4 bg-white rounded-lg shadow-xl p-4 min-w-[280px] max-w-[90vw] z-50",
+                    button:
+                      "w-10 h-10 md:w-12 md:h-12 rounded-full bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center cursor-pointer [data-platform='twitter']:text-[#1DA1F2] [data-platform='facebook']:text-[#1877F2] [data-platform='linkedin']:text-[#0A66C2] [data-platform='instagram']:text-[#E4405F]",
+                    toast:
+                      "fixed bottom-4 right-4 bg-white rounded-lg shadow-xl p-4 min-w-[280px] max-w-[90vw] z-50",
                     toastContent: "font-semibold text-gray-900",
                   }}
                   theme={{ iconSize: 20 }}
@@ -195,10 +201,13 @@ const App: React.FC = () => {
                   onShare={handleShare}
                   classNames={{
                     root: "text-center",
-                    title: "flex items-center justify-center gap-1 mb-6 text-sm text-gray-300 font-medium",
+                    title:
+                      "flex items-center justify-center gap-1 mb-6 text-sm text-gray-300 font-medium",
                     buttons: "flex items-center justify-center gap-3 md:gap-4",
-                    button: "w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 border-2 border-gray-600 hover:scale-105 transition-all duration-200 flex items-center justify-center text-white cursor-pointer [data-platform='twitter']:!border-[#1DA1F2]",
-                    toast: "fixed bottom-4 right-4 bg-gray-800 rounded-lg shadow-xl p-4 min-w-[280px] max-w-[90vw] z-50 border border-gray-700",
+                    button:
+                      "w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 border-2 border-gray-600 hover:scale-105 transition-all duration-200 flex items-center justify-center text-white cursor-pointer [data-platform='twitter']:!border-[#1DA1F2]",
+                    toast:
+                      "fixed bottom-4 right-4 bg-gray-800 rounded-lg shadow-xl p-4 min-w-[280px] max-w-[90vw] z-50 border border-gray-700",
                     toastContent: "text-sm text-gray-400",
                   }}
                   theme={{ iconSize: 20 }}
@@ -234,7 +243,8 @@ const App: React.FC = () => {
               )}
               classNames={{
                 root: "text-center",
-                title: "flex items-center justify-center gap-2 mb-8 text-lg text-gray-700 font-medium",
+                title:
+                  "flex items-center justify-center gap-2 mb-8 text-lg text-gray-700 font-medium",
                 buttons: "flex items-center justify-center gap-3",
               }}
             />
