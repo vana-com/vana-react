@@ -121,33 +121,24 @@ export interface ShareButtonProps {
 interface ShareButtonConfig {
   platform: SocialPlatform;
   Icon: LucideIcon;
-  getUrl: (text: string) => string;
 }
 
 const SHARE_BUTTONS: ShareButtonConfig[] = [
   {
     platform: "twitter",
     Icon: Twitter,
-    getUrl: (text: string) => `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`,
   },
   {
     platform: "facebook",
     Icon: Facebook,
-    getUrl: (text: string) =>
-      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-        window.location.origin
-      )}&quote=${encodeURIComponent(text)}`,
   },
   {
     platform: "linkedin",
     Icon: Linkedin,
-    getUrl: (text: string) =>
-      `https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(text)}`,
   },
   {
     platform: "instagram",
     Icon: Camera,
-    getUrl: () => "https://www.instagram.com/",
   },
 ];
 
@@ -295,7 +286,6 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
           {SHARE_BUTTONS.map((config) => {
             const Icon = config.Icon;
             const text = generateShareText();
-
             const buttonClassName = classNames.button || "";
 
             const handleClick = () =>
