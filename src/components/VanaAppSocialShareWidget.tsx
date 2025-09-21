@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { flushSync } from "react-dom";
+import { flushSync, createPortal } from "react-dom";
 import { Twitter, Facebook, Linkedin, Camera, Share2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -100,8 +100,10 @@ export interface VanaAppSocialShareWidgetProps {
 export interface ToastMessage {
   /** Toast notification title text */
   title: string;
-  /** Toast content - can include React elements for progress bars */
+  /** Toast content - string for external handlers, React elements for internal */
   description: React.ReactNode;
+  /** Progress percentage (0-100) for countdown timer */
+  progress?: number;
   /** Display duration in milliseconds. Use Infinity for persistent toasts */
   duration?: number;
 }
@@ -292,36 +294,11 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
         }
       };
 
-      // Initial toast
+      // Initial toast - send clean data to external handlers
       showToast({
         title: "Copied to clipboard!",
-        description: (
-          <div>
-            <p>
-              Opening {platform} in {countdown}... Paste your message there.
-            </p>
-            <div
-              className={classNames.progress}
-              style={{
-                position: "relative",
-                height: "4px",
-                backgroundColor: "rgba(0,0,0,0.1)",
-                borderRadius: "2px",
-                overflow: "hidden",
-                marginTop: "8px",
-              }}
-            >
-              <div
-                style={{
-                  width: `${progress}%`,
-                  height: "100%",
-                  backgroundColor: "currentColor",
-                  transition: "width 100ms linear",
-                }}
-              />
-            </div>
-          </div>
-        ),
+        description: `Opening ${platform} in ${countdown}... Paste your message there.`,
+        progress,
         duration: Infinity,
       });
 
@@ -337,33 +314,8 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
         if (progress > 0) {
           showToast({
             title: "Copied to clipboard!",
-            description: (
-              <div>
-                <p>
-                  Opening {platform} in {countdown}... Paste your message there.
-                </p>
-                <div
-                  className={classNames.progress}
-                  style={{
-                    position: "relative",
-                    height: "4px",
-                    backgroundColor: "rgba(0,0,0,0.1)",
-                    borderRadius: "2px",
-                    overflow: "hidden",
-                    marginTop: "8px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${progress}%`,
-                      height: "100%",
-                      backgroundColor: "currentColor",
-                      transition: "width 100ms linear",
-                    }}
-                  />
-                </div>
-              </div>
-            ),
+            description: `Opening ${platform} in ${countdown}... Paste your message there.`,
+            progress,
             duration: Infinity,
           });
         } else {
@@ -444,15 +396,79 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
           })}
         </div>
 
-        {/* Internal Toast (if no external handler provided) */}
-        {!onShowToast && internalToast.message && (
-          <div className={classNames.toast} data-toast="true">
-            <div className={classNames.toastContent}>
-              <div>{internalToast.message.title}</div>
-              {internalToast.message.description}
-            </div>
-          </div>
-        )}
+        {/* Internal Toast (if no external handler provided) - rendered via portal */}
+        {!onShowToast &&
+          internalToast.message &&
+          typeof document !== "undefined" &&
+          createPortal(
+            <>
+              {!classNames.toast && (
+                <style>
+                  {`
+                    [data-toast="true"] {
+                      position: fixed;
+                      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+                      left: 16px;
+                      right: 16px;
+                      background-color: white;
+                      border: 1px solid #ccc;
+                      border-radius: 8px;
+                      padding: 16px;
+                      z-index: 9999;
+                      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                      font-family: system-ui, sans-serif;
+                      font-size: 14px;
+                      line-height: 1.5;
+                      max-width: 400px;
+                      margin: 0 auto;
+                    }
+                    @media (min-width: 640px) {
+                      [data-toast="true"] {
+                        left: auto;
+                        right: 16px;
+                        max-width: 350px;
+                        margin: 0;
+                      }
+                    }
+                  `}
+                </style>
+              )}
+              <div className={classNames.toast} data-toast="true">
+                <div className={classNames.toastContent}>
+                  <div style={{ fontWeight: "500", marginBottom: "4px" }}>
+                    {internalToast.message.title}
+                  </div>
+                  <div style={{ opacity: 0.8 }}>{internalToast.message.description}</div>
+                  {typeof internalToast.message.progress === "number" && (
+                    <div
+                      className={classNames.progress}
+                      style={
+                        classNames.progress
+                          ? {}
+                          : {
+                              marginTop: "8px",
+                              height: "3px",
+                              backgroundColor: "rgba(0,0,0,0.1)",
+                              borderRadius: "2px",
+                              overflow: "hidden",
+                            }
+                      }
+                    >
+                      <div
+                        style={{
+                          width: `${internalToast.message.progress}%`,
+                          height: "100%",
+                          backgroundColor: "#666",
+                          transition: "width 100ms linear",
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>,
+            document.body
+          )}
       </div>
     );
   }
