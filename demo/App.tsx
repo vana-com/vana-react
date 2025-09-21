@@ -32,9 +32,7 @@ const App: React.FC = () => {
             <div className="bg-black rounded-lg overflow-hidden">
               <div className="p-8">
                 <VanaAppSocialShareWidget
-                  appName="Oracle Reading"
-                  shareContent="Your personalized oracle reading"
-                  shareEmoji="🔮"
+                  shareContent="🔮 Your personalized oracle reading"
                   title="SHARE YOUR ORACLE READING"
                   onShare={handleShare}
                   classNames={{
@@ -75,9 +73,7 @@ const App: React.FC = () => {
               />
               <div className="relative p-8 border-4 border-black bg-white/10">
                 <VanaAppSocialShareWidget
-                  appName="Score Share"
-                  shareContent="My amazing score"
-                  shareEmoji="📢"
+                  shareContent="📢 My amazing score"
                   title="SHARE UR SCORE:"
                   onShare={handleShare}
                   buttonComponent={({ platform, Icon, onClick }) => (
@@ -123,9 +119,7 @@ const App: React.FC = () => {
           </p>
           <div className="bg-white rounded-lg shadow-sm p-6">
             <VanaAppSocialShareWidget
-              appName="Test App"
-              shareContent="This is completely unstyled by default"
-              shareEmoji="✨"
+              shareContent="✨ This is completely unstyled by default"
               onShare={handleShare}
             />
           </div>
@@ -153,10 +147,7 @@ const App: React.FC = () => {
                 </div>
 
                 <VanaAppSocialShareWidget
-                  appName="Ice Cream Flavor"
-                  shareContent="ChocoVision Leader (Dark Chocolate)"
-                  shareEmoji="🍦"
-                  funnyNote="Apparently I&apos;m in the same league as Beyoncé! 😎"
+                  shareContent="If I was an Ice Cream Flavour, I'd be ChocoVision Leader, Dark Chocolate - Apparently I'm in the same league as Beyoncé! 😎"
                   title="Share your flavor"
                   onShare={handleShare}
                   onCopySuccess={handleCopySuccess}
@@ -202,10 +193,7 @@ const App: React.FC = () => {
                 </div>
 
                 <VanaAppSocialShareWidget
-                  appName="What Token Are You"
-                  shareContent="The Sovereign Network Diplomat (ATOM)"
-                  shareEmoji="🪙"
-                  funnyNote="Sound like me? 💎✋"
+                  shareContent="🪙 The Sovereign Network Diplomat (ATOM)\n\nSound like me? 💎✋"
                   title="Share your token"
                   onShare={handleShare}
                   classNames={{
@@ -233,9 +221,7 @@ const App: React.FC = () => {
 
           <div className="bg-white rounded-lg shadow-sm p-8">
             <VanaAppSocialShareWidget
-              appName="Custom App"
-              shareContent="Using a custom button component"
-              shareEmoji="🎨"
+              shareContent="🎨 Using a custom button component"
               title="Custom Design System Buttons"
               onShare={handleShare}
               buttonComponent={({ Icon, onClick, platform }) => (
@@ -267,9 +253,7 @@ const App: React.FC = () => {
 
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-lg p-8">
             <VanaAppSocialShareWidget
-              appName="Render Prop App"
-              shareContent="Maximum flexibility with render props"
-              shareEmoji="🚀"
+              shareContent="🚀 Maximum flexibility with render props"
               hideTitle
               onShare={handleShare}
               renderButton={(platform, Icon) => (
@@ -299,8 +283,7 @@ function MyApp() {
   return (
     <VanaAppSocialShareWidget
       appName="Ice Cream Flavor"
-      shareContent="ChocoVision Leader"
-      shareEmoji="🍦"
+      shareContent="🍦 ChocoVision Leader"
       title="Share your flavor"
 
       // Apply Tailwind classes to every part

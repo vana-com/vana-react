@@ -47,7 +47,6 @@ export interface VanaAppSocialShareClassNames {
  *
  * @remarks
  * **Required Props:**
- * - `appName`: Your application name from the Vana Developer Portal
  * - `shareContent`: The main result/content users want to share
  *
  * **Customization Props:**
@@ -64,17 +63,11 @@ export interface VanaAppSocialShareClassNames {
 export interface VanaAppSocialShareWidgetProps {
   /** Title displayed above share buttons (e.g., "Share your result") */
   title?: string;
-  /** Name of your Vana app. Obtain from Developer Portal at app.vana.com/build */
-  appName: string;
   /** Main content to share - user's result, score, or generated content */
   shareContent: string;
-  /** Optional emoji to prepend to share content (e.g., "🍦", "🪙") */
-  shareEmoji?: string;
-  /** Optional engaging note to add after content (e.g., "Sound like me? 💎✋") */
-  funnyNote?: string;
-  /** Custom call-to-action text. Default: "Try @ app.vana.com" */
+  /** Custom call-to-action text. Default: "Try on app.vana.com" */
   callToAction?: string;
-  /** Hashtag to append to share text. Default: "#DATAREVOLUTION" */
+  /** Hashtag to append to share text. Default: "#datarevolution" */
   hashtag?: string;
   /** Theme configuration for visual customization */
   theme?: VanaAppSocialShareTheme;
@@ -201,9 +194,7 @@ DefaultShareButton.displayName = "DefaultShareButton";
  *
  *   return (
  *     <VanaAppSocialShareWidget
- *       appName="Ice Cream Flavor"
- *       shareContent="ChocoVision Leader (Dark Chocolate)"
- *       shareEmoji="🍦"
+ *       shareContent="🍦 ChocoVision Leader (Dark Chocolate)"
  *       title="Share your flavor"
  *       onShare={handleShare}
  *       classNames={{
@@ -222,12 +213,9 @@ DefaultShareButton.displayName = "DefaultShareButton";
 export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> = React.memo(
   ({
     title = "Share",
-    appName,
     shareContent,
-    shareEmoji = "",
-    funnyNote = "",
-    callToAction = "Try @ app.vana.com",
-    hashtag = "#DATAREVOLUTION",
+    callToAction = "Try on app.vana.com",
+    hashtag = "#datarevolution",
     theme = {},
     classNames = {},
     hideTitle = false,
@@ -250,10 +238,6 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
 
     const generateShareText = useCallback(
       (platform: SocialPlatform): string => {
-        const emoji = shareEmoji ? `${shareEmoji} ` : "";
-        const intro = `Tried Vana's ${appName}, look what I got:\n\n`;
-        const content = `${emoji}${shareContent}`;
-        const note = funnyNote ? `\n\n${funnyNote}` : "";
         const cta = `\n\n${callToAction}`;
         const tag = `\n${hashtag}`;
 
@@ -261,9 +245,9 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
         const needsFullUrl = platform === "instagram" || platform === "facebook";
         const ctaWithUrl = needsFullUrl ? cta.replace("app.vana.com", "https://app.vana.com") : cta;
 
-        return `${intro}${content}${note}${ctaWithUrl}${tag}`;
+        return `${shareContent}${ctaWithUrl}${tag}`;
       },
-      [appName, shareContent, shareEmoji, funnyNote, callToAction, hashtag]
+      [shareContent, callToAction, hashtag]
     );
 
     const copyAndOpenWithCountdown = (text: string, platform: string, url: string) => {
