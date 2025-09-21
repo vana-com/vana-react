@@ -77,7 +77,10 @@ describe("VanaAppSocialShareWidget", () => {
     );
 
     const twitterButton = screen.getByLabelText("Share on twitter");
-    fireEvent.click(twitterButton);
+
+    act(() => {
+      fireEvent.click(twitterButton);
+    });
 
     expect(mockWriteText).toHaveBeenCalledWith(
       expect.stringContaining("Tried Vana's Ice Cream Flavor")
@@ -151,29 +154,49 @@ describe("VanaAppSocialShareWidget", () => {
     );
   });
 
-  it("uses custom toast handler when provided", () => {
-    const mockToastHandler = vi.fn();
-    const { container } = render(
+  it("calls onCopySuccess with correct data", () => {
+    const mockCopySuccess = vi.fn();
+    render(
       <VanaAppSocialShareWidget
         appName="Test App"
         shareContent="Test content"
-        onShowToast={mockToastHandler}
+        onCopySuccess={mockCopySuccess}
       />
     );
 
     const twitterButton = screen.getByLabelText("Share on twitter");
-    fireEvent.click(twitterButton);
 
-    expect(mockToastHandler).toHaveBeenCalledWith(
-      expect.objectContaining({
-        title: "Copied to clipboard!",
-        duration: 3000,
-        progress: 100,
-      })
+    act(() => {
+      fireEvent.click(twitterButton);
+    });
+
+    expect(mockCopySuccess).toHaveBeenCalledWith(
+      "twitter",
+      expect.stringContaining("Tried Vana's Test App"),
+      3000
+    );
+    expect(mockCopySuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows internal toast even when onCopySuccess is provided", () => {
+    const mockCopySuccess = vi.fn();
+    render(
+      <VanaAppSocialShareWidget
+        appName="Test App"
+        shareContent="Test content"
+        onCopySuccess={mockCopySuccess}
+      />
     );
 
-    // Internal toast should not be rendered
-    expect(container.querySelector('[data-toast="true"]')).not.toBeInTheDocument();
+    const twitterButton = screen.getByLabelText("Share on twitter");
+
+    act(() => {
+      fireEvent.click(twitterButton);
+    });
+
+    // Both should happen: external callback AND internal toast
+    expect(mockCopySuccess).toHaveBeenCalled();
+    expect(screen.getByText("Copied to clipboard!")).toBeInTheDocument();
   });
 
   it("applies custom classNames", () => {

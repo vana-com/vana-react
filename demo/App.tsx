@@ -7,6 +7,13 @@ const App: React.FC = () => {
     console.log(`Shared on ${platform}`);
   };
 
+  const handleCopySuccess = (platform: string, shareText: string, delayMs: number) => {
+    console.log(`Copy success! Platform: ${platform}, Delay: ${delayMs}ms`);
+    console.log(`Share text: ${shareText}`);
+    // Example: Send analytics event
+    // analytics.track('share_copied', { platform, text_length: shareText.length });
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-50 py-4 px-4 overflow-x-hidden">
@@ -152,6 +159,7 @@ const App: React.FC = () => {
                   funnyNote="Apparently I&apos;m in the same league as Beyoncé! 😎"
                   title="Share your flavor"
                   onShare={handleShare}
+                  onCopySuccess={handleCopySuccess}
                   classNames={{
                     root: "text-center",
                     title:

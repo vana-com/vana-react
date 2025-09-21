@@ -82,30 +82,14 @@ export interface VanaAppSocialShareWidgetProps {
   classNames?: VanaAppSocialShareClassNames;
   /** Hide the title section completely */
   hideTitle?: boolean;
-  /** Custom toast notification handler. Uses internal toast if not provided */
-  onShowToast?: (message: ToastMessage) => void;
+  /** Callback fired when text is copied to clipboard, before opening platform */
+  onCopySuccess?: (platform: SocialPlatform, shareText: string, openDelayMs: number) => void;
   /** Callback fired when user initiates sharing on any platform */
   onShare?: (platform: SocialPlatform) => void;
   /** Render prop for complete button customization */
   renderButton?: (platform: SocialPlatform, Icon: LucideIcon) => React.ReactNode;
   /** Custom button component to replace default buttons */
   buttonComponent?: React.ComponentType<ShareButtonProps>;
-}
-
-/**
- * Toast notification message structure for the share widget.
- *
- * @category Widgets
- */
-export interface ToastMessage {
-  /** Toast notification title text */
-  title: string;
-  /** Toast content - string for external handlers, React elements for internal */
-  description: React.ReactNode;
-  /** Progress percentage (0-100) for countdown timer */
-  progress?: number;
-  /** Display duration in milliseconds. Use Infinity for persistent toasts */
-  duration?: number;
 }
 
 /**
@@ -245,13 +229,18 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
     theme = {},
     classNames = {},
     hideTitle = false,
-    onShowToast,
+    onCopySuccess,
     onShare,
     renderButton,
     buttonComponent: ButtonComponent = DefaultShareButton,
   }) => {
     const [internalToast, setInternalToast] = useState<{
-      message: ToastMessage | null;
+      message: {
+        title: string;
+        description: React.ReactNode;
+        progress?: number;
+        duration?: number;
+      } | null;
     }>({ message: null });
 
     const toastTimerRef = useRef<NodeJS.Timeout>();
@@ -281,32 +270,26 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
       // Trigger share callback (lowercase platform name)
       onShare?.(platform.toLowerCase() as SocialPlatform);
 
-      // Create countdown state
+      // Call external copy success handler with raw data
+      const delayMs = 3000;
+      onCopySuccess?.(platform.toLowerCase() as SocialPlatform, text, delayMs);
+
+      // Setup internal toast with countdown
       const totalTime = 3;
       let countdown = totalTime;
       let progress = 100;
 
-      // For external handlers: call once with initial message
-      if (onShowToast) {
-        onShowToast({
+      // Set initial internal toast state
+      setInternalToast({
+        message: {
           title: "Copied to clipboard!",
-          description: `Opening ${platform} in ${countdown} seconds... Paste your message there.`,
+          description: `Opening ${platform} in ${countdown}... Paste your message there.`,
           progress,
-          duration: 3000, // 3 seconds, not Infinity
-        });
-      } else {
-        // For internal toast: set initial state
-        setInternalToast({
-          message: {
-            title: "Copied to clipboard!",
-            description: `Opening ${platform} in ${countdown}... Paste your message there.`,
-            progress,
-            duration: Infinity,
-          },
-        });
-      }
+          duration: Infinity,
+        },
+      });
 
-      // Update progress
+      // Update progress for internal toast animation
       const progressTimer = setInterval(() => {
         progress = Math.max(0, progress - 100 / (totalTime * 10));
         const currentCountdown = Math.ceil(progress / (100 / totalTime));
@@ -316,25 +299,21 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
         }
 
         if (progress > 0) {
-          // Only update internal toast, never call external handler again
-          if (!onShowToast) {
-            setInternalToast({
-              message: {
-                title: "Copied to clipboard!",
-                description: `Opening ${platform} in ${countdown}... Paste your message there.`,
-                progress,
-                duration: Infinity,
-              },
-            });
-          }
+          // Update internal toast with live countdown
+          setInternalToast({
+            message: {
+              title: "Copied to clipboard!",
+              description: `Opening ${platform} in ${countdown}... Paste your message there.`,
+              progress,
+              duration: Infinity,
+            },
+          });
         } else {
           clearInterval(progressTimer);
-          // Clear toast
-          if (!onShowToast) {
-            flushSync(() => {
-              setInternalToast({ message: null });
-            });
-          }
+          // Clear internal toast
+          flushSync(() => {
+            setInternalToast({ message: null });
+          });
           // Open platform securely
           window.open(url, "_blank", "noopener,noreferrer");
         }
@@ -405,9 +384,8 @@ export const VanaAppSocialShareWidget: React.FC<VanaAppSocialShareWidgetProps> =
           })}
         </div>
 
-        {/* Internal Toast (if no external handler provided) - rendered via portal */}
-        {!onShowToast &&
-          internalToast.message &&
+        {/* Internal Toast - rendered via portal */}
+        {internalToast.message &&
           typeof document !== "undefined" &&
           createPortal(
             <>
