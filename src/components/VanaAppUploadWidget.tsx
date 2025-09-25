@@ -69,6 +69,12 @@ export interface VanaAppUploadWidgetProps {
   onAuth: (walletAddress: string) => void;
 
   /**
+   * Optional callback function invoked when user closes the widget.
+   * Useful for hiding or removing the iframe container.
+   */
+  onClose?: () => void;
+
+  /**
    * Origin URL of the Vana iframe application.
    * @defaultValue `"https://app.vana.com"`
    */
@@ -166,6 +172,7 @@ export function VanaAppUploadWidget({
   onResult,
   onError,
   onAuth,
+  onClose,
   iframeOrigin = "https://app.vana.com",
   schemaId,
   prompt,
@@ -236,6 +243,13 @@ export function VanaAppUploadWidget({
           break;
         }
 
+        case "close": {
+          if (onClose) {
+            onClose();
+          }
+          break;
+        }
+
         default: {
           if (process.env.NODE_ENV === "development") {
             console.warn(`[VanaAppUploadWidget] Unknown message type: ${type}`, data);
@@ -243,7 +257,7 @@ export function VanaAppUploadWidget({
         }
       }
     },
-    [appId, schemaId, prompt, theme, iframeOrigin, onAuth, onResult, onError]
+    [appId, schemaId, prompt, theme, iframeOrigin, onAuth, onResult, onError, onClose]
   );
 
   useEffect(() => {
