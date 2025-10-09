@@ -2,6 +2,7 @@ export { VanaAppUploadWidget } from "./components/VanaAppUploadWidget";
 export type {
   VanaAppUploadWidgetProps,
   VanaAppUploadTheme,
+  AgentOperationResult,
 } from "./components/VanaAppUploadWidget";
 
 export { VanaAppSocialShareWidget } from "./components/VanaAppSocialShareWidget";

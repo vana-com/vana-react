@@ -86,6 +86,8 @@ describe("VanaAppUploadWidget", () => {
           appId: "test-app-123",
           schemaId: 123,
           aiPrompt: "Test prompt",
+          operation: undefined,
+          operationParams: undefined,
           embeddingOrigin: window.location.origin,
         }),
         "https://app.vana.com"
@@ -132,14 +134,31 @@ describe("VanaAppUploadWidget", () => {
   it("calls onResult when complete message received", () => {
     render(<VanaAppUploadWidget {...mockProps} />);
 
+    const agentResult = {
+      output: "success-data",
+      artifacts: [
+        {
+          name: "result.txt",
+          artifact_path: "/path/to/result.txt",
+          size: 1024,
+          content_type: "text/plain",
+        },
+      ],
+    };
+
     const completeEvent = new MessageEvent("message", {
-      data: { type: "complete", result: "success-data" },
+      data: {
+        type: "complete",
+        result: {
+          result: JSON.stringify(agentResult),
+        },
+      },
       origin: "https://app.vana.com",
     });
 
     messageListeners.forEach((listener) => listener(completeEvent));
 
-    expect(mockProps.onResult).toHaveBeenCalledWith("success-data");
+    expect(mockProps.onResult).toHaveBeenCalledWith(agentResult);
   });
 
   it("calls onError when error message received", () => {
@@ -285,12 +304,21 @@ describe("VanaAppUploadWidget", () => {
     expect(iframe.style.height).toBe("500px");
 
     // Simulate completion
+    const analysisResult = {
+      output: "analysis results",
+      artifacts: [],
+    };
     const completeEvent = new MessageEvent("message", {
-      data: { type: "complete", result: "analysis results" },
+      data: {
+        type: "complete",
+        result: {
+          result: JSON.stringify(analysisResult),
+        },
+      },
       origin: "https://app.vana.com",
     });
     messageListeners.forEach((listener) => listener(completeEvent));
-    expect(mockProps.onResult).toHaveBeenCalledWith("analysis results");
+    expect(mockProps.onResult).toHaveBeenCalledWith(analysisResult);
 
     // Simulate close
     const closeEvent = new MessageEvent("message", {
@@ -356,5 +384,94 @@ describe("VanaAppUploadWidget", () => {
 
     // Should not call postMessage when data is missing
     expect(mockPostMessage).not.toHaveBeenCalled();
+  });
+
+  it("sends operation and operationParams in config message", async () => {
+    const { container } = render(
+      <VanaAppUploadWidget
+        {...mockProps}
+        operation="analyze_sentiment"
+        operationParams={{ model: "gpt-4", temperature: 0.7 }}
+      />
+    );
+    const iframe = container.querySelector("iframe") as HTMLIFrameElement;
+
+    const mockPostMessage = vi.fn();
+    Object.defineProperty(iframe, "contentWindow", {
+      value: { postMessage: mockPostMessage },
+      writable: true,
+    });
+
+    const readyEvent = new MessageEvent("message", {
+      data: { type: "ready" },
+      origin: "https://app.vana.com",
+    });
+
+    messageListeners.forEach((listener) => listener(readyEvent));
+
+    await waitFor(() => {
+      expect(mockPostMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "config",
+          operation: "analyze_sentiment",
+          operationParams: { model: "gpt-4", temperature: 0.7 },
+        }),
+        "https://app.vana.com"
+      );
+    });
+  });
+
+  it("calls onError when result JSON parsing fails", () => {
+    render(<VanaAppUploadWidget {...mockProps} />);
+
+    const completeEvent = new MessageEvent("message", {
+      data: {
+        type: "complete",
+        result: {
+          result: "invalid json {",
+        },
+      },
+      origin: "https://app.vana.com",
+    });
+
+    messageListeners.forEach((listener) => listener(completeEvent));
+
+    expect(mockProps.onError).toHaveBeenCalledWith(
+      "Failed to parse agent result from Vana Widget."
+    );
+  });
+
+  it("calls onError when operation result is missing", () => {
+    render(<VanaAppUploadWidget {...mockProps} />);
+
+    const completeEvent = new MessageEvent("message", {
+      data: {
+        type: "complete",
+        result: {},
+      },
+      origin: "https://app.vana.com",
+    });
+
+    messageListeners.forEach((listener) => listener(completeEvent));
+
+    expect(mockProps.onError).toHaveBeenCalledWith("Operation completed with no result.");
+  });
+
+  it("calls onError with error from operation response", () => {
+    render(<VanaAppUploadWidget {...mockProps} />);
+
+    const completeEvent = new MessageEvent("message", {
+      data: {
+        type: "complete",
+        result: {
+          error: "Operation failed on server",
+        },
+      },
+      origin: "https://app.vana.com",
+    });
+
+    messageListeners.forEach((listener) => listener(completeEvent));
+
+    expect(mockProps.onError).toHaveBeenCalledWith("Operation failed on server");
   });
 });
