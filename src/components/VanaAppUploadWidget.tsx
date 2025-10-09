@@ -264,20 +264,20 @@ export function VanaAppUploadWidget({
         }
 
         case "complete": {
-          // event.data.result is the GetOperationResponse object from the SDK
-          const operationResponse = data.result;
+          // event.data.result is the polling response with nested operation result
+          const pollingResponse = data.result;
 
-          if (operationResponse && operationResponse.status === "ok") {
+          if (pollingResponse?.status === "succeeded" && pollingResponse?.result) {
+            const operationResult = pollingResponse.result;
             // Map SDK response to AgentOperationResult format
             const agentResult: AgentOperationResult = {
-              output:
-                operationResponse.summary || operationResponse.result || operationResponse.stdout,
-              artifacts: operationResponse.artifacts,
+              output: operationResult.summary || operationResult.stdout,
+              artifacts: operationResult.artifacts,
             };
             onResult(agentResult);
           } else {
             // Handle cases where the operation might have failed or returned no result
-            onError(operationResponse?.error || "Operation completed with no result.");
+            onError(pollingResponse?.error || "Operation completed with no result.");
           }
           break;
         }

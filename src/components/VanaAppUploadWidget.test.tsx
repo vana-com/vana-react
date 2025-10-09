@@ -138,16 +138,19 @@ describe("VanaAppUploadWidget", () => {
       data: {
         type: "complete",
         result: {
-          status: "ok",
-          summary: "success-data",
-          artifacts: [
-            {
-              name: "result.txt",
-              artifact_path: "/path/to/result.txt",
-              size: 1024,
-              content_type: "text/plain",
-            },
-          ],
+          status: "succeeded",
+          result: {
+            status: "ok",
+            summary: "success-data",
+            artifacts: [
+              {
+                name: "result.txt",
+                artifact_path: "/path/to/result.txt",
+                size: 1024,
+                content_type: "text/plain",
+              },
+            ],
+          },
         },
       },
       origin: "https://app.vana.com",
@@ -315,9 +318,12 @@ describe("VanaAppUploadWidget", () => {
       data: {
         type: "complete",
         result: {
-          status: "ok",
-          summary: "analysis results",
-          artifacts: [],
+          status: "succeeded",
+          result: {
+            status: "ok",
+            summary: "analysis results",
+            artifacts: [],
+          },
         },
       },
       origin: "https://app.vana.com",
@@ -429,7 +435,7 @@ describe("VanaAppUploadWidget", () => {
     });
   });
 
-  it("calls onError when operation status is not ok", () => {
+  it("calls onError when polling status is failed", () => {
     render(<VanaAppUploadWidget {...mockProps} />);
 
     const completeEvent = new MessageEvent("message", {
@@ -471,9 +477,12 @@ describe("VanaAppUploadWidget", () => {
       data: {
         type: "complete",
         result: {
-          status: "ok",
-          stdout: "Console output from operation",
-          artifacts: [],
+          status: "succeeded",
+          result: {
+            status: "ok",
+            stdout: "Console output from operation",
+            artifacts: [],
+          },
         },
       },
       origin: "https://app.vana.com",
