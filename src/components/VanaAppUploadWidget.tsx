@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from "react";
 import type { CSSProperties } from "react";
 
 /**
@@ -22,6 +22,33 @@ export interface AgentOperationResult {
     /** MIME type of the artifact */
     content_type?: string;
   }[];
+  /** The operation ID for this agent execution - required for downloading artifacts */
+  operationId: string;
+}
+
+/**
+ * Imperative handle exposed via ref for programmatic widget control.
+ * Provides methods to interact with the widget after operation completion.
+ * @public
+ */
+export interface VanaAppUploadWidgetHandle {
+  /**
+   * Downloads artifact content from the personal server.
+   * @param params - Parameters specifying which artifact to download
+   * @param params.operationId - The operation ID that generated the artifact
+   * @param params.artifactPath - The artifact path from the AgentOperationResult
+   * @returns Promise resolving to the artifact content as a Blob
+   * @throws Error if widget is not ready, download fails, or request times out (30s)
+   * @example
+   * ```tsx
+   * const widgetRef = useRef<VanaAppUploadWidgetHandle>(null);
+   * const blob = await widgetRef.current?.downloadArtifact({
+   *   operationId: result.operationId,
+   *   artifactPath: "recommendations.json"
+   * });
+   * ```
+   */
+  downloadArtifact(params: { operationId: string; artifactPath: string }): Promise<Blob>;
 }
 
 /**
@@ -198,149 +225,242 @@ export interface VanaAppUploadWidgetProps {
  * />
  * ```
  *
+ * @example
+ * With ref for artifact downloads:
+ * ```tsx
+ * const widgetRef = useRef<VanaAppUploadWidgetHandle>(null);
+ * <VanaAppUploadWidget
+ *   ref={widgetRef}
+ *   appId="my-app-123"
+ *   operation="prompt_gemini_agent"
+ *   onResult={async (result) => {
+ *     const artifact = result.artifacts?.[0];
+ *     if (artifact && widgetRef.current) {
+ *       const blob = await widgetRef.current.downloadArtifact({
+ *         operationId: result.operationId,
+ *         artifactPath: artifact.artifact_path
+ *       });
+ *     }
+ *   }}
+ *   onError={handleError}
+ *   onAuth={handleAuth}
+ * />
+ * ```
+ *
  * @param props - Configuration options for the widget
+ * @param ref - Ref for accessing imperative methods like downloadArtifact
  * @returns A React component that renders the Vana data upload widget
  *
  * @public
  */
-export function VanaAppUploadWidget({
-  appId,
-  onResult,
-  onError,
-  onAuth,
-  onClose,
-  iframeOrigin = "https://app.vana.com",
-  schemaId,
-  prompt,
-  operation,
-  operationParams,
-  theme,
-  className = "w-full relative min-h-[550px]",
-  style,
-}: VanaAppUploadWidgetProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const iframeSrc = `${iframeOrigin}/embed/upload`;
-
-  const handleMessage = useCallback(
-    (event: MessageEvent) => {
-      if (event.origin !== iframeOrigin) {
-        return;
-      }
-
-      const { type, ...data } = event.data;
-
-      switch (type) {
-        case "ready": {
-          if (iframeRef.current?.contentWindow) {
-            iframeRef.current.contentWindow.postMessage(
-              {
-                type: "config",
-                appId,
-                schemaId,
-                aiPrompt: prompt,
-                operation,
-                operationParams,
-                embeddingOrigin: window.location.origin,
-                theme,
-              },
-              iframeOrigin
-            );
-          }
-          break;
-        }
-
-        case "relay": {
-          if (iframeRef.current?.contentWindow && data.data) {
-            iframeRef.current.contentWindow.postMessage(data.data, iframeOrigin);
-          }
-          break;
-        }
-
-        case "auth": {
-          if (data.walletAddress) {
-            onAuth(data.walletAddress);
-          }
-          break;
-        }
-
-        case "complete": {
-          // event.data.result is the polling response with nested operation result
-          const pollingResponse = data.result;
-
-          if (pollingResponse?.status === "succeeded" && pollingResponse?.result) {
-            const operationResult = pollingResponse.result;
-            // Map SDK response to AgentOperationResult format
-            const agentResult: AgentOperationResult = {
-              output: operationResult.summary || operationResult.stdout,
-              artifacts: operationResult.artifacts,
-            };
-            onResult(agentResult);
-          } else {
-            // Handle cases where the operation might have failed or returned no result
-            onError(pollingResponse?.error || "Operation completed with no result.");
-          }
-          break;
-        }
-
-        case "error": {
-          const errorMessage = data.message || data.error || "An error occurred";
-          onError(errorMessage);
-          break;
-        }
-
-        case "resize": {
-          if (data.height && iframeRef.current) {
-            iframeRef.current.style.height = `${data.height}px`;
-          }
-          break;
-        }
-
-        case "close": {
-          if (onClose) {
-            onClose();
-          }
-          break;
-        }
-
-        default: {
-          if (process.env.NODE_ENV === "development") {
-            console.warn(`[VanaAppUploadWidget] Unknown message type: ${type}`, data);
-          }
-        }
-      }
-    },
-    [
+export const VanaAppUploadWidget = forwardRef<VanaAppUploadWidgetHandle, VanaAppUploadWidgetProps>(
+  function VanaAppUploadWidget(
+    {
       appId,
+      onResult,
+      onError,
+      onAuth,
+      onClose,
+      iframeOrigin = "https://app.vana.com",
       schemaId,
       prompt,
       operation,
       operationParams,
       theme,
-      iframeOrigin,
-      onAuth,
-      onResult,
-      onError,
-      onClose,
-    ]
-  );
+      className = "w-full relative min-h-[550px]",
+      style,
+    },
+    ref
+  ) {
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+    const iframeSrc = `${iframeOrigin}/embed/upload`;
 
-  useEffect(() => {
-    window.addEventListener("message", handleMessage);
-    return () => {
-      window.removeEventListener("message", handleMessage);
-    };
-  }, [handleMessage]);
+    // Expose imperative handle for artifact downloads
+    useImperativeHandle(
+      ref,
+      () => ({
+        downloadArtifact: ({ operationId, artifactPath }) => {
+          return new Promise<Blob>((resolve, reject) => {
+            const iframe = iframeRef.current;
+            if (!iframe?.contentWindow) {
+              reject(new Error("Widget iframe not ready"));
+              return;
+            }
 
-  return (
-    <div className={className} style={style}>
-      <iframe
-        ref={iframeRef}
-        src={iframeSrc}
-        className="w-full border-none bg-transparent"
-        style={{ width: "100%", border: "none", background: "transparent" }}
-        sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox"
-        title="Vana Data Upload Widget"
-      />
-    </div>
-  );
-}
+            const listener = (event: MessageEvent) => {
+              // Verify origin for security
+              if (event.origin !== iframeOrigin) {
+                return;
+              }
+
+              // Match the response to this specific request
+              if (
+                event.data.operationId !== operationId ||
+                event.data.artifactPath !== artifactPath
+              ) {
+                return;
+              }
+
+              // Handle success
+              if (event.data.type === "ARTIFACT_CONTENT") {
+                window.removeEventListener("message", listener);
+                clearTimeout(timeoutId);
+                resolve(event.data.content as Blob);
+              }
+              // Handle error
+              else if (event.data.type === "ARTIFACT_ERROR") {
+                window.removeEventListener("message", listener);
+                clearTimeout(timeoutId);
+                reject(new Error(event.data.error || "Failed to download artifact"));
+              }
+            };
+
+            // Set up timeout (30 seconds)
+            const timeoutId = setTimeout(() => {
+              window.removeEventListener("message", listener);
+              reject(new Error("Artifact download timeout after 30 seconds"));
+            }, 30000);
+
+            // Register listener
+            window.addEventListener("message", listener);
+
+            // Send download request to iframe
+            iframe.contentWindow.postMessage(
+              {
+                type: "DOWNLOAD_ARTIFACT",
+                operationId,
+                artifactPath,
+              },
+              iframeOrigin
+            );
+          });
+        },
+      }),
+      [iframeOrigin]
+    );
+
+    const handleMessage = useCallback(
+      (event: MessageEvent) => {
+        if (event.origin !== iframeOrigin) {
+          return;
+        }
+
+        const { type, ...data } = event.data;
+
+        switch (type) {
+          case "ready": {
+            if (iframeRef.current?.contentWindow) {
+              iframeRef.current.contentWindow.postMessage(
+                {
+                  type: "config",
+                  appId,
+                  schemaId,
+                  aiPrompt: prompt,
+                  operation,
+                  operationParams,
+                  embeddingOrigin: window.location.origin,
+                  theme,
+                },
+                iframeOrigin
+              );
+            }
+            break;
+          }
+
+          case "relay": {
+            if (iframeRef.current?.contentWindow && data.data) {
+              iframeRef.current.contentWindow.postMessage(data.data, iframeOrigin);
+            }
+            break;
+          }
+
+          case "auth": {
+            if (data.walletAddress) {
+              onAuth(data.walletAddress);
+            }
+            break;
+          }
+
+          case "complete": {
+            // event.data.result is the polling response with nested operation result
+            const pollingResponse = data.result;
+
+            if (pollingResponse?.status === "succeeded" && pollingResponse?.result) {
+              const operationResult = pollingResponse.result;
+              // Map SDK response to AgentOperationResult format
+              const agentResult: AgentOperationResult = {
+                output: operationResult.summary || operationResult.stdout,
+                artifacts: operationResult.artifacts,
+                operationId: pollingResponse.id,
+              };
+              onResult(agentResult);
+            } else {
+              // Handle cases where the operation might have failed or returned no result
+              onError(pollingResponse?.error || "Operation completed with no result.");
+            }
+            break;
+          }
+
+          case "error": {
+            const errorMessage = data.message || data.error || "An error occurred";
+            onError(errorMessage);
+            break;
+          }
+
+          case "resize": {
+            if (data.height && iframeRef.current) {
+              iframeRef.current.style.height = `${data.height}px`;
+            }
+            break;
+          }
+
+          case "close": {
+            if (onClose) {
+              onClose();
+            }
+            break;
+          }
+
+          default: {
+            if (process.env.NODE_ENV === "development") {
+              console.warn(`[VanaAppUploadWidget] Unknown message type: ${type}`, data);
+            }
+          }
+        }
+      },
+      [
+        appId,
+        schemaId,
+        prompt,
+        operation,
+        operationParams,
+        theme,
+        iframeOrigin,
+        onAuth,
+        onResult,
+        onError,
+        onClose,
+      ]
+    );
+
+    useEffect(() => {
+      window.addEventListener("message", handleMessage);
+      return () => {
+        window.removeEventListener("message", handleMessage);
+      };
+    }, [handleMessage]);
+
+    return (
+      <div className={className} style={style}>
+        <iframe
+          ref={iframeRef}
+          src={iframeSrc}
+          className="w-full border-none bg-transparent"
+          style={{ width: "100%", border: "none", background: "transparent" }}
+          sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox"
+          title="Vana Data Upload Widget"
+        />
+      </div>
+    );
+  }
+);

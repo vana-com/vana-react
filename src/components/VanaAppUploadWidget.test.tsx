@@ -138,6 +138,7 @@ describe("VanaAppUploadWidget", () => {
       data: {
         type: "complete",
         result: {
+          id: "operation-123",
           status: "succeeded",
           result: {
             status: "ok",
@@ -168,6 +169,7 @@ describe("VanaAppUploadWidget", () => {
           content_type: "text/plain",
         },
       ],
+      operationId: "operation-123",
     });
   });
 
@@ -318,6 +320,7 @@ describe("VanaAppUploadWidget", () => {
       data: {
         type: "complete",
         result: {
+          id: "operation-456",
           status: "succeeded",
           result: {
             status: "ok",
@@ -332,6 +335,7 @@ describe("VanaAppUploadWidget", () => {
     expect(mockProps.onResult).toHaveBeenCalledWith({
       output: "analysis results",
       artifacts: [],
+      operationId: "operation-456",
     });
 
     // Simulate close
@@ -477,6 +481,7 @@ describe("VanaAppUploadWidget", () => {
       data: {
         type: "complete",
         result: {
+          id: "operation-789",
           status: "succeeded",
           result: {
             status: "ok",
@@ -493,6 +498,7 @@ describe("VanaAppUploadWidget", () => {
     expect(mockProps.onResult).toHaveBeenCalledWith({
       output: "Console output from operation",
       artifacts: [],
+      operationId: "operation-789",
     });
   });
 });
