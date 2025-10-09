@@ -267,14 +267,14 @@ export function VanaAppUploadWidget({
           // event.data.result is the GetOperationResponse object from the SDK
           const operationResponse = data.result;
 
-          if (operationResponse?.result) {
-            try {
-              // The actual agent result is a JSON string inside the `result` property.
-              const agentResult: AgentOperationResult = JSON.parse(operationResponse.result);
-              onResult(agentResult);
-            } catch (e) {
-              onError("Failed to parse agent result from Vana Widget.");
-            }
+          if (operationResponse && operationResponse.status === "ok") {
+            // Map SDK response to AgentOperationResult format
+            const agentResult: AgentOperationResult = {
+              output:
+                operationResponse.summary || operationResponse.result || operationResponse.stdout,
+              artifacts: operationResponse.artifacts,
+            };
+            onResult(agentResult);
           } else {
             // Handle cases where the operation might have failed or returned no result
             onError(operationResponse?.error || "Operation completed with no result.");
