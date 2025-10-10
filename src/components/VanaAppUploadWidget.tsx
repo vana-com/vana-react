@@ -30,6 +30,56 @@ export interface AgentOperationResult {
  * Imperative handle exposed via ref for programmatic widget control.
  * Provides methods to interact with the widget after operation completion.
  * @public
+ * @example
+ * Using the ref to download artifacts:
+ * ```tsx
+ * import { useRef } from 'react';
+ * import { VanaAppUploadWidget, VanaAppUploadWidgetHandle, AgentOperationResult } from '@opendatalabs/vana-react';
+ *
+ * function App() {
+ *   const widgetRef = useRef<VanaAppUploadWidgetHandle>(null);
+ *
+ *   const handleResult = async (result: AgentOperationResult) => {
+ *     console.log('Operation completed:', result.output);
+ *
+ *     // Download artifacts if available
+ *     if (result.artifacts && result.artifacts.length > 0) {
+ *       for (const artifact of result.artifacts) {
+ *         try {
+ *           const blob = await widgetRef.current?.downloadArtifact({
+ *             operationId: result.operationId,
+ *             artifactPath: artifact.artifact_path
+ *           });
+ *
+ *           // Process the downloaded artifact
+ *           if (blob) {
+ *             const url = URL.createObjectURL(blob);
+ *             const a = document.createElement('a');
+ *             a.href = url;
+ *             a.download = artifact.name;
+ *             a.click();
+ *             URL.revokeObjectURL(url);
+ *           }
+ *         } catch (error) {
+ *           console.error('Failed to download artifact:', error);
+ *         }
+ *       }
+ *     }
+ *   };
+ *
+ *   return (
+ *     <VanaAppUploadWidget
+ *       ref={widgetRef}
+ *       appId="my-app-123"
+ *       operation="prompt_gemini_agent"
+ *       operationParams={{ goal: "Analyze user data" }}
+ *       onResult={handleResult}
+ *       onError={(error) => console.error('Error:', error)}
+ *       onAuth={(wallet) => console.log('Authenticated:', wallet)}
+ *     />
+ *   );
+ * }
+ * ```
  */
 export interface VanaAppUploadWidgetHandle {
   /**
@@ -39,14 +89,6 @@ export interface VanaAppUploadWidgetHandle {
    * @param params.artifactPath - The artifact path from the AgentOperationResult
    * @returns Promise resolving to the artifact content as a Blob
    * @throws Error if widget is not ready, download fails, or request times out (30s)
-   * @example
-   * ```tsx
-   * const widgetRef = useRef<VanaAppUploadWidgetHandle>(null);
-   * const blob = await widgetRef.current?.downloadArtifact({
-   *   operationId: result.operationId,
-   *   artifactPath: "recommendations.json"
-   * });
-   * ```
    */
   downloadArtifact(params: { operationId: string; artifactPath: string }): Promise<Blob>;
 }
@@ -144,9 +186,22 @@ export interface VanaAppUploadWidgetProps {
   prompt?: string;
 
   /**
-   * Generic agent operation to execute on the user's trusted server.
-   * This is the operation name that will be passed to the personal server.
-   * @example "analyze_sentiment" or "generate_summary"
+   * Generic agent operation to execute on the user's personal server.
+   *
+   * The operation is executed on the user's trusted personal server instance
+   * (vana-personal-server), which must be running and configured to support
+   * the requested operation type.
+   *
+   * Standard supported operations (personal server v1.0+):
+   * - `llm_inference`: LLM text generation with user data context
+   * - `prompt_gemini_agent`: Gemini-based agentic task execution
+   * - `prompt_qwen_agent`: Qwen-based agentic task execution
+   *
+   * Custom operations may also be supported depending on the personal server
+   * configuration and installed agents.
+   *
+   * @example "prompt_gemini_agent"
+   * @example "llm_inference"
    */
   operation?: string;
 
