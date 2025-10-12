@@ -476,6 +476,13 @@ export const VanaAppUploadWidget = forwardRef<VanaAppUploadWidgetHandle, VanaApp
             break;
           }
 
+          case "ARTIFACT_CONTENT":
+          case "ARTIFACT_ERROR": {
+            // These messages are handled by the downloadArtifact() listener
+            // No action needed here - just prevent unknown message warning
+            break;
+          }
+
           default: {
             if (process.env.NODE_ENV === "development") {
               console.warn(`[VanaAppUploadWidget] Unknown message type: ${type}`, data);
