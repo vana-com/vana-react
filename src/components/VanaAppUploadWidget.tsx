@@ -29,15 +29,22 @@ export interface AgentOperationResult {
 /**
  * Imperative handle exposed via ref for programmatic widget control.
  * Provides methods to interact with the widget after operation completion.
+ *
+ * Use this handle when your operation generates artifacts (files) that you need to
+ * download and process in your application. Agent operations like `prompt_gemini_agent`
+ * can produce reports, CSVs, images, or other file outputs that are made available
+ * via the artifacts array in the result.
+ *
  * @public
  * @example
- * Using the ref to download artifacts:
+ * Complete example using ref to download artifacts:
  * ```tsx
- * import { useRef } from 'react';
+ * import { useRef, useState } from 'react';
  * import { VanaAppUploadWidget, VanaAppUploadWidgetHandle, AgentOperationResult } from '@opendatalabs/vana-react';
  *
  * function App() {
  *   const widgetRef = useRef<VanaAppUploadWidgetHandle>(null);
+ *   const [downloadedFiles, setDownloadedFiles] = useState<string[]>([]);
  *
  *   const handleResult = async (result: AgentOperationResult) => {
  *     console.log('Operation completed:', result.output);
@@ -46,6 +53,7 @@ export interface AgentOperationResult {
  *     if (result.artifacts && result.artifacts.length > 0) {
  *       for (const artifact of result.artifacts) {
  *         try {
+ *           // Download artifact using the ref handle
  *           const blob = await widgetRef.current?.downloadArtifact({
  *             operationId: result.operationId,
  *             artifactPath: artifact.artifact_path
@@ -53,12 +61,19 @@ export interface AgentOperationResult {
  *
  *           // Process the downloaded artifact
  *           if (blob) {
+ *             // Option 1: Trigger browser download
  *             const url = URL.createObjectURL(blob);
  *             const a = document.createElement('a');
  *             a.href = url;
  *             a.download = artifact.name;
  *             a.click();
  *             URL.revokeObjectURL(url);
+ *
+ *             // Option 2: Read content for processing
+ *             const text = await blob.text();
+ *             console.log('Artifact content:', text);
+ *
+ *             setDownloadedFiles(prev => [...prev, artifact.name]);
  *           }
  *         } catch (error) {
  *           console.error('Failed to download artifact:', error);
@@ -68,15 +83,25 @@ export interface AgentOperationResult {
  *   };
  *
  *   return (
- *     <VanaAppUploadWidget
- *       ref={widgetRef}
- *       appId="my-app-123"
- *       operation="prompt_gemini_agent"
- *       operationParams={{ goal: "Analyze user data" }}
- *       onResult={handleResult}
- *       onError={(error) => console.error('Error:', error)}
- *       onAuth={(wallet) => console.log('Authenticated:', wallet)}
- *     />
+ *     <div>
+ *       <VanaAppUploadWidget
+ *         ref={widgetRef}
+ *         appId="my-app-123"
+ *         operation="prompt_gemini_agent"
+ *         operationParams={{ goal: "Generate a comprehensive report" }}
+ *         onResult={handleResult}
+ *         onError={(error) => console.error('Error:', error)}
+ *         onAuth={(wallet) => console.log('Authenticated:', wallet)}
+ *       />
+ *       {downloadedFiles.length > 0 && (
+ *         <div>
+ *           <h3>Downloaded artifacts:</h3>
+ *           <ul>
+ *             {downloadedFiles.map(file => <li key={file}>{file}</li>)}
+ *           </ul>
+ *         </div>
+ *       )}
+ *     </div>
  *   );
  * }
  * ```
@@ -188,17 +213,22 @@ export interface VanaAppUploadWidgetProps {
   /**
    * Generic agent operation to execute on the user's personal server.
    *
-   * The operation is executed on the user's trusted personal server instance
-   * (vana-personal-server), which must be running and configured to support
-   * the requested operation type.
+   * **Important:** This operation is executed on the user's trusted personal server
+   * instance (vana-personal-server). The personal server must be running and properly
+   * configured to support the requested operation type. The Vana SDK communicates with
+   * the user's personal server to execute the operation securely with access to their
+   * encrypted data.
    *
-   * Standard supported operations (personal server v1.0+):
-   * - `llm_inference`: LLM text generation with user data context
-   * - `prompt_gemini_agent`: Gemini-based agentic task execution
-   * - `prompt_qwen_agent`: Qwen-based agentic task execution
+   * **Standard supported operations** (vana-personal-server v1.0+):
+   * - `llm_inference`: Direct LLM text generation with user data context. Use with
+   *   `operationParams: { prompt: string, response_format?: { type: 'json_object' } }`
+   * - `prompt_gemini_agent`: Gemini-based agentic task execution with tool use, web
+   *   search, and multi-step reasoning. Use with `operationParams: { goal: string }`
+   * - `prompt_qwen_agent`: Qwen-based agentic task execution with shell command
+   *   capabilities. Use with `operationParams: { goal: string }`
    *
    * Custom operations may also be supported depending on the personal server
-   * configuration and installed agents.
+   * configuration and installed agent plugins.
    *
    * @example "prompt_gemini_agent"
    * @example "llm_inference"
@@ -211,6 +241,13 @@ export interface VanaAppUploadWidgetProps {
    * @example { "model": "gpt-4", "temperature": 0.7 }
    */
   operationParams?: Record<string, unknown>;
+
+  /**
+   * JSONPath filters to apply to user data before sending to the operation.
+   * Maps schema IDs to JSONPath expressions for data filtering.
+   * @example { "24": "$.publicData.linkedinUserData.[hero, about.aboutText]" }
+   */
+  filters?: Record<string, string>;
 
   /**
    * Custom theme configuration using CSS custom properties.
@@ -321,6 +358,7 @@ export const VanaAppUploadWidget = forwardRef<VanaAppUploadWidgetHandle, VanaApp
       prompt,
       operation,
       operationParams,
+      filters,
       theme,
       className = "w-full relative min-h-[550px]",
       style,
@@ -413,6 +451,7 @@ export const VanaAppUploadWidget = forwardRef<VanaAppUploadWidgetHandle, VanaApp
                   aiPrompt: prompt,
                   operation,
                   operationParams,
+                  filters,
                   embeddingOrigin: window.location.origin,
                   theme,
                 },
@@ -496,6 +535,7 @@ export const VanaAppUploadWidget = forwardRef<VanaAppUploadWidgetHandle, VanaApp
         prompt,
         operation,
         operationParams,
+        filters,
         theme,
         iframeOrigin,
         onAuth,
