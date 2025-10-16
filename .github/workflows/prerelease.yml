@@ -6,6 +6,7 @@ on:
       - beta
       - alpha
       - 'feature/*'
+      - feature/agent-operations-support
       - tim/app-500-upload-widget-integrating-new-ui-with-functional-widget
 
 jobs:
